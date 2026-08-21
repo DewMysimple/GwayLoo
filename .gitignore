@@ -1,0 +1,29 @@
+# Local WordPress configuration and secrets
+wp-config.php
+wp-config-local.php
+.env
+.env.*
+!.env.example
+
+# Runtime-generated WordPress files
+wp-content/uploads/
+wp-content/cache/
+wp-content/upgrade/
+wp-content/backup-*/
+wp-content/advanced-cache.php
+wp-content/object-cache.php
+
+# Local development and OS files
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.swp
+.idea/
+.vscode/
+
+# Dependency/build output generated locally
+node_modules/
+dist/
+build/
+coverage/
