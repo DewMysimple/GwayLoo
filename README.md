@@ -62,6 +62,15 @@ davidwhyte-template/
 - **样式**:主样式在 `wp-content/themes/davidwhyte/style.css`(已压缩,可用 Prettier 展开后编辑)
 - **核心动画逻辑**:`wp-content/themes/davidwhyte/app.js`(压缩混淆,一般只改数据不碰它)
 
+## 工程记忆
+
+工程记忆统一存放在 [`工程记忆/`](./工程记忆/) 目录中，不与项目源代码和资源混放。
+
+```bash
+python 工程记忆/工具/memory_lint.py check
+python 工程记忆/工具/memory_lint.py index
+```
+
 ## 依赖说明
 
 - 页面运行时无外网依赖,离线可完整运行水彩 WebGL 动画

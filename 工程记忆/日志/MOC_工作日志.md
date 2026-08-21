@@ -26,7 +26,6 @@ supersedes: null
 ## 入口
 
 - [[工程记忆README|工程 Agent 记忆系统]]
-- [[README|项目 README]]
 - [[AGENTS|记忆维护协议]]
 - [[日志/README|工作日志说明]]
 - [[当前状态/项目概览|当前项目概览]]
