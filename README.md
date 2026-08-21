@@ -1,84 +1,80 @@
-# David Whyte Experience — 本地模板副本
+# Verminoble
 
-从 https://davidwhyte.com/experience/ 完整抓取的静态站点模板,已本地化,可离线运行、二次修改。
+Verminoble 是一个以 React 管理的沉浸式创作体验站。当前兼容版保留六组本地水彩场景、场景内的 “Open the landscape” 全屏体验，以及原版沉浸区之后的 Benefits、FAQ 和体验收尾，用于忠实回归、替换素材与逐步二次创作。
 
-## 快速开始
+Benefits、FAQ、订阅按钮和相关英文仅作为原版静态体验内容保留；其中订阅、赠送、邮箱、社交分享与奖项文字均不执行页面跳转。项目没有对应的账户、商城、支付、订阅后端或 WordPress 服务。
+
+## 开发
+
+要求：Node.js 20.19+。本项目使用 npm。
 
 ```bash
-# 方式一:直接双击 index.html 打开(部分浏览器对本地 file:// 有限制,推荐方式二)
-# 方式二:本地服务器(推荐)
-python -m http.server 8787
-# 然后访问 http://127.0.0.1:8787/index.html
+npm install
+npm run dev
 ```
 
-> 注意:必须通过 HTTP 服务访问,直接双击 file:// 打开时 WebGL 纹理(ktx2/basis 转码)可能无法加载。
+Vite 会显示本地访问地址，通常是 `http://localhost:5173`。
 
-## 目录结构
+常用命令：
 
-```
-davidwhyte-template/
-├── index.html                          # 主页面(入口,可直接编辑)
-├── wp-content/
-│   ├── themes/davidwhyte/
-│   │   ├── style.css                   # 全站样式(536KB)
-│   │   ├── loader.css                  # 加载动画样式
-│   │   ├── app.js                      # 核心脚本(4MB,含 WebGL 水彩引擎)
-│   │   └── resources/assets/
-│   │       ├── fonts/                  # CanelaText + Roobert 字体(woff2/woff)
-│   │       ├── xp/
-│   │       │   ├── models/scene.glb    # 3D 水彩场景模型
-│   │       │   ├── textures/           # 纸张/噪声/草地/纹理图集
-│   │       │   ├── msdf/               # MSDF 文字纹理
-│   │       │   ├── videos/             # 24 个水彩视频纹理(desktop+mobile, base+over, 1-6)
-│   │       │   ├── sounds/             # 背景音效(mp3)
-│   │       │   ├── libs/basis/         # KTX2 纹理转码器
-│   │       │   └── lut/                # 调色 LUT(ink/dry)
-│   │       └── detect-gpu/benchmarks/  # GPU 性能检测基准数据(本地化)
-│   ├── plugins/                        # WooCommerce/MemberPress 样式与脚本
-│   └── uploads/                        # 站点图标
-├── mapbox-gl-js/                       # Mapbox GL(本地化,当前页面未用)
-├── dash.js/                            # DASH 播放器(本地化)
-├── npm/                                # tarteaucitron 弹窗(本地化)
-└── clover/                             # Stripe(本地化)
+```bash
+npm run lint          # 代码规范检查
+npm run typecheck     # TypeScript 类型检查
+npm run test          # 组件测试
+npm run check:assets  # 检查六组视频与音频资源
+npm run build         # 生产构建
+npm run preview       # 预览生产构建
 ```
 
-## 已做的本地化改造
+## 架构
 
-1. 删除 `<base href>` 标签,所有资源改为相对路径
-2. 移除 Google Analytics、Cloudflare email-decode、hCaptcha 外链脚本
-3. CDN 依赖(mapbox、dash.js、tarteaucitron、stripe)全部下载到本地
-4. **GPU 检测基准数据本地化**:原站依赖 unpkg.com 拉取 detect-gpu 数据,已改为读取本地 `wp-content/themes/davidwhyte/resources/assets/detect-gpu/benchmarks/`
-5. **修复 hcaptcha ReferenceError**:联系表单的 `data-is-captcha-active` 已改为 `false`,避免组件初始化链中断
-6. 补充下载 MSDF 字体纹理(`/xp/msdf/CanelaText-Light/`)
+```text
+src/
+├── app/                         # 应用入口
+├── content/                     # 可编辑文案与场景资源清单
+├── features/experience/         # 沉浸体验与旧运行时桥接
+├── styles/                      # 主题令牌与全局样式
+└── test/                        # 测试初始化
 
-## 二次修改要点
+public/wp-content/themes/davidwhyte/
+├── app.js                       # 临时兼容的压缩 WebGL 运行时
+├── style.css、loader.css         # 体验样式兼容层
+└── resources/assets/            # 模型、纹理、字体、视频与音频
+```
 
-- **首页文字(水彩场景中的诗句)**:编辑 index.html 中 `.xp-text-w` / `.xp-text-w-inside` 下的 `.xp-text` 块(共 3 段)
-- **页面文案**:搜索 "Become a companion"、"Subscriber Benefits" 等标题直接替换
-- **FAQ**:`.internal-module.faq` 中的 `.question` 块,可复制增加
-- **按钮/链接**:`Subscribe - $75 / year` 等链接指向 `./register/membership/`,需改为你自己的落地页
-- **品牌名**:全局替换 "David Whyte" → 你的名字
-- **水彩背景素材**:替换 `wp-content/themes/davidwhyte/resources/assets/xp/videos/desktop/` 下的 mp4(1-6 号 base/over 成对替换),注意保持同样文件名
-- **样式**:主样式在 `wp-content/themes/davidwhyte/style.css`(已压缩,可用 Prettier 展开后编辑)
-- **核心动画逻辑**:`wp-content/themes/davidwhyte/app.js`(压缩混淆,一般只改数据不碰它)
+`LegacyRuntimeBridge` 是唯一接触旧运行时的 React 模块。它渲染 Canvas、视频、音频、加载器和必要的兼容节点；`OriginalExperienceTail` 用 React 保留原版体验尾部的 DOM 契约。项目运行不依赖 WordPress 服务。
+
+旧运行时仍硬编码使用 `/wp-content/themes/davidwhyte/resources/assets/` 路径，因此这些文件暂时保留在 Vite 的 `public` 目录中。这是静态兼容路径，不代表项目继续使用 WordPress。
+
+## 内容与素材替换
+
+- 中文加载、按钮和三段文字：编辑 `src/content/experience.ts`。
+- 六组场景视频映射：编辑 `src/content/scenes.ts`。
+- 当前运行时尚未读取场景清单来加载视频，因此替换媒体时仍须保持原有 `desktop/mobile`、`base/over`、`1-6` 文件结构和名称。
+- 每次替换资源后运行 `npm run check:assets`，并在桌面和移动端实际体验场景切换。
+- 当 WebGL 引擎被重写为可维护模块后，`sceneManifest` 将成为运行时唯一的场景资源来源。
+
+## 兼容层的当前边界
+
+当前压缩的 `app.js` 负责 Canvas、WebGL、视频纹理、音频和 “Open the landscape” 全屏状态。它没有可维护的源模块，因此本阶段不直接编辑它。
+
+画布内由该运行时绘制的英文景观标题、“Open the landscape” 及现有可见控件暂按只读源码保留。后续重写引擎后，画布内文案和资源映射会一并配置化；未经明确授权，不改变当前原版 UI 与交互。
+
+## 基线与版权
+
+迁移前的完整静态快照已在本地 Git 标签 `baseline/static-replica-2026-08-22` 中归档。可通过以下命令查看：
+
+```bash
+git show baseline/static-replica-2026-08-22
+```
+
+当前素材、字体、模型、音频和原站文本仅可用于本地实验与技术参考。任何公开发布前，都必须完成品牌替换、素材授权或替换、外链审查和版权清理。
 
 ## 工程记忆
 
-工程记忆统一存放在 [`工程记忆/`](./工程记忆/) 目录中，不与项目源代码和资源混放。
+项目记忆不与源码混放，统一位于 [`工程记忆/`](./工程记忆/)。开始新任务前请先阅读 [`工程记忆/AGENTS.md`](./工程记忆/AGENTS.md)。
 
 ```bash
 python 工程记忆/工具/memory_lint.py check
 python 工程记忆/工具/memory_lint.py index
 ```
-
-## 依赖说明
-
-- 页面运行时无外网依赖,离线可完整运行水彩 WebGL 动画
-- 社交分享按钮、Awwwards 等外链仍指向原站(仅链接,不加载资源)
-- 视频纹理在进入具体水彩场景时才由 JS 按需加载(`_setSceneTexture`),初始加载页无视频属正常
-
-## 原始来源
-
-- 站点:https://davidwhyte.com/experience/
-- 抓取日期:2026-08-21
-- 版权:模板归原网站所有,仅用于学习与二次创作参考

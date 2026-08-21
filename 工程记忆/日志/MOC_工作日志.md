@@ -15,7 +15,12 @@ supersedes: null
 
 | 时间 | 类型 | 目标 | 状态 | 主题 | 日志 |
 | --- | --- | --- | --- | --- | --- |
+| 2026-08-22 | bug | 修复第三个景观结束后滚动提前终止，恢复原版沉浸区之后的完整连续内容。 | archived | source-faithful-page-tail-scroll-restoration | [[日志/2026-08-22-页面尾部连续滚动恢复.md|2026-08-22｜页面尾部连续滚动恢复]] |
+| 2026-08-22 | feature | 保持原版尾部的文字、图标与布局，同时阻止订阅、赠送、邮箱、社交分享和奖项内容跳转到其他页面。 | archived | experience-tail-external-links-disabled | [[日志/2026-08-22-页面尾部外链静态化.md|2026-08-22｜页面尾部外链静态化]] |
+| 2026-08-22 | bug | 恢复 React 迁移后偏小的画布诗句字号，以及失效的原版滚轮推进交互。 | archived | original-poem-scale-and-scroll-restoration | [[日志/2026-08-22-诗句字号与滚动交互恢复.md|2026-08-22｜诗句字号与滚动交互恢复]] |
 | 2026-08-22 | maintenance | 根据外部工程记忆模板，为 Verminoble 建立可持续维护的项目记忆。 | archived | project-memory-initialization | [[日志/2026-08-22-工程记忆初始化.md|2026-08-22｜工程记忆初始化]] |
+| 2026-08-22 | bug | 修复 React 迁移后体验卡在空白加载画面、原版双阶段加载界面缺失的问题。 | archived | original-two-stage-loader-restoration | [[日志/2026-08-22-双阶段加载界面恢复.md|2026-08-22｜双阶段加载界面恢复]] |
+| 2026-08-22 | feature | 将静态 WordPress 快照改造为可通过 npm 开发的 React 模块化沉浸体验。 | archived | react-architecture-migration | [[日志/2026-08-22-react架构迁移.md|2026-08-22｜React 架构迁移]] |
 
 ## 使用方式
 
