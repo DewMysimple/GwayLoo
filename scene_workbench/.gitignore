@@ -1,0 +1,11 @@
+# Local source copies and Blender deliverables are intentionally not published.
+source_snapshot/*
+blender/*.blend
+blender/*.blend1
+generated/*
+reports/rendered/
+
+# Keep the reproducible structure visible in Git.
+!source_snapshot/.gitkeep
+!blender/.gitkeep
+!generated/.gitkeep

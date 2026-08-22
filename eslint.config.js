@@ -5,7 +5,16 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', 'public/wp-content'] },
+  {
+    ignores: [
+      'dist',
+      'node_modules',
+      'public/wp-content',
+      'scene_workbench/source_snapshot',
+      'scene_workbench/generated',
+      'scene_workbench/blender'
+    ]
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

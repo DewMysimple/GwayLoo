@@ -59,7 +59,8 @@ src/
 
 tests/e2e/                            # Playwright 双视口回归
 public/wp-content/themes/davidwhyte/  # 验收期只读兼容运行时与原素材
-工程记忆/                             # ADR、当前状态、知识和任务日志
+scene_workbench/                      # 本地三维资产镜像与 Blender 二创工作区
+wiki_memory/                          # ADR、当前状态、知识和任务日志
 ```
 
 `ExperienceDefinition` 是新运行时的配置入口；`sceneManifest` 已是 R3F 六场景视频的唯一来源。legacy 内部仍保留其硬编码映射，因此迁移验收前不要改变原目录和文件名。
@@ -85,11 +86,17 @@ git show baseline/static-replica-2026-08-22
 
 原始媒体、字体、模型、音频和文本仅限本地实验与技术参考。公开发布前必须完成品牌替换、素材授权或替换、外链审查和版权清理。
 
+## 三维场景工作区
+
+[`scene_workbench/`](./scene_workbench/) 是与正式网页隔离的本地美术工作区，保存三维体验资产副本、场景清单、重建脚本和 Blender 5.0 主文件。Vite、`src/` 和 `public/` 不引用该目录；原素材副本、生成缓存与 `.blend` 按本地实验策略不进入 Git。
+
+使用和重建说明见 [`scene_workbench/README.md`](./scene_workbench/README.md)。
+
 ## 工程记忆
 
-工程记忆集中在 [`工程记忆/`](./工程记忆/)，不散落到项目根目录：
+工程记忆集中在 [`wiki_memory/`](./wiki_memory/)，不散落到项目根目录：
 
 ```bash
-python 工程记忆/工具/memory_lint.py index
-python 工程记忆/工具/memory_lint.py check
+python wiki_memory/工具/memory_lint.py index
+python wiki_memory/工具/memory_lint.py check
 ```

@@ -1,0 +1,145 @@
+{
+  "blender_version": "5.0.0",
+  "renders": [
+    {
+      "scene": "WEB_ANIMATION",
+      "frame": 0,
+      "path": "generated/renders/web-animation-0000.png",
+      "bytes": 119453,
+      "sha256": "9702CF22BB1909C06F0220670996485F83094A89BA53EDF69D76555DC8B47F32"
+    },
+    {
+      "scene": "WEB_ANIMATION",
+      "frame": 60,
+      "path": "generated/renders/web-animation-0060.png",
+      "bytes": 335403,
+      "sha256": "57BC2BD485BA2C45E14063EFC675FBCB1A2F4C6F63B1DCDCE048AB2618A47978"
+    },
+    {
+      "scene": "WEB_ANIMATION",
+      "frame": 210,
+      "path": "generated/renders/web-animation-0210.png",
+      "bytes": 453727,
+      "sha256": "2D180ADC9B8928A9CD7F28A20E1DCCA2B5DA86E94A5D658AC90CCAA169DF03C5"
+    },
+    {
+      "scene": "WEB_ANIMATION",
+      "frame": 420,
+      "path": "generated/renders/web-animation-0420.png",
+      "bytes": 554883,
+      "sha256": "5EEA999BA1C93EC8B32A1663FB8B263C307CF084BA17F5F7ACCE95BA52C5A42C"
+    },
+    {
+      "scene": "WEB_ANIMATION",
+      "frame": 900,
+      "path": "generated/renders/web-animation-0900.png",
+      "bytes": 331999,
+      "sha256": "9BFCB86A04987B73D5AC47E4F27DE1739F920134DA1AA55D9C0E79044C3BA005"
+    },
+    {
+      "scene": "WEB_ANIMATION",
+      "frame": 1793,
+      "path": "generated/renders/web-animation-1793.png",
+      "bytes": 424966,
+      "sha256": "6D50DF198BA64D5C94A81B2B02E294840D2FC81619BB579C344607DED41E1710"
+    },
+    {
+      "scene": "WEB_ANIMATION",
+      "frame": 3586,
+      "path": "generated/renders/web-animation-3586.png",
+      "bytes": 712782,
+      "sha256": "17B05DF934ADCF49018F4041D1832206D220DB9A049EE4129DF4E2881101F2AE"
+    },
+    {
+      "scene": "ARTIST_EDIT",
+      "frame": 3586,
+      "path": "generated/renders/artist-edit-materials.png",
+      "bytes": 712801,
+      "sha256": "7F61711F6EE09C10FAD8F4380AA638372E08B10C4C0D4FDFD661836D9413B9F1"
+    },
+    {
+      "scene": "VALIDATION_MATERIAL_PREVIEW",
+      "frame": 0,
+      "path": "generated/renders/material-preview-tree.png",
+      "bytes": 382616,
+      "sha256": "02708CCD7DEF02D12333941D3FB57C34F5334222F00C381C3CC124CC21AB09C7"
+    },
+    {
+      "scene": "VALIDATION_GRASS_PREVIEW",
+      "frame": 3586,
+      "path": "generated/renders/grass-preview-tree.png",
+      "bytes": 552308,
+      "sha256": "FB00F727F4EDBF4F75C55907AF18BCDACF3A1ED6C794BAAE268D0C8687449C4F"
+    },
+    {
+      "scene": "SOURCE_REFERENCE",
+      "frame": 0,
+      "path": "generated/renders/source-camera-0000.png",
+      "bytes": 119480,
+      "sha256": "4D454A5159189E59126A1DE9DA9B2A9B7223479DC0633954357AC64544F206EE"
+    },
+    {
+      "scene": "SOURCE_REFERENCE",
+      "frame": 900,
+      "path": "generated/renders/source-camera-0900.png",
+      "bytes": 119480,
+      "sha256": "81AD6BA0825D25B4DE69CF9D3024BB2C4B7714202E72748B102E272BE11E6151"
+    },
+    {
+      "scene": "SOURCE_REFERENCE",
+      "frame": 1793,
+      "path": "generated/renders/source-camera-1793.png",
+      "bytes": 119480,
+      "sha256": "051DE6CE96E759D43BBD88A63AC210D40298B17FC4757CCCBFC9EA3CD32BA5D3"
+    },
+    {
+      "scene": "SOURCE_REFERENCE",
+      "frame": 3586,
+      "path": "generated/renders/source-camera-3586.png",
+      "bytes": 119480,
+      "sha256": "704443985E97ACB1D975778CF91CF1032D6F6F033856902832C0C0C1E4CCDFE6"
+    },
+    {
+      "scene": "LANDSCAPE_01_DESKTOP",
+      "frame": 0,
+      "path": "generated/renders/landscape-01-desktop-base.png",
+      "bytes": 234768,
+      "sha256": "5A8E03711B4889F2BAE1168C08492F411F2E500AB6EDC42BA775F8BE2F4C60EE"
+    },
+    {
+      "scene": "LANDSCAPE_02_DESKTOP",
+      "frame": 0,
+      "path": "generated/renders/landscape-02-desktop-base.png",
+      "bytes": 227009,
+      "sha256": "CD0648FD125039D5AB9C5D00E4565D3C56B93081E7885046CCD43753E607ED42"
+    },
+    {
+      "scene": "LANDSCAPE_03_DESKTOP",
+      "frame": 0,
+      "path": "generated/renders/landscape-03-desktop-base.png",
+      "bytes": 242467,
+      "sha256": "5C3D3EC5367A7CE8CF262DD570D9CEA89F9832F7ED0B11502046CA2C66BF989E"
+    },
+    {
+      "scene": "LANDSCAPE_04_DESKTOP",
+      "frame": 0,
+      "path": "generated/renders/landscape-04-desktop-base.png",
+      "bytes": 238228,
+      "sha256": "F1E40E90F687A84DB544BED74C3C6A27D5F78D71F9DD89A40C4A6D421BD855D6"
+    },
+    {
+      "scene": "LANDSCAPE_05_DESKTOP",
+      "frame": 0,
+      "path": "generated/renders/landscape-05-desktop-base.png",
+      "bytes": 210438,
+      "sha256": "D4E4BC20D505AF88DA97A23A3CE7B4E06F51DEDD269D8717D0534EA5AD4F1B81"
+    },
+    {
+      "scene": "LANDSCAPE_06_DESKTOP",
+      "frame": 0,
+      "path": "generated/renders/landscape-06-desktop-base.png",
+      "bytes": 229522,
+      "sha256": "60C22469DEBC96C30986FD899D03CD0B93FF1598528421B738BFB79B0E6C57AD"
+    }
+  ]
+}

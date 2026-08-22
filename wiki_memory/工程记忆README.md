@@ -16,7 +16,7 @@
 ## 目录结构
 
 ```text
-工程记忆构建/
+wiki_memory/
 ├── README.md
 ├── AGENTS.md                 # 记忆维护协议
 ├── llm-wiki.md               # 理念参考
