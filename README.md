@@ -1,80 +1,95 @@
 # Verminoble
 
-Verminoble 是一个以 React 管理的沉浸式创作体验站。当前兼容版保留六组本地水彩场景、场景内的 “Open the landscape” 全屏体验，以及原版沉浸区之后的 Benefits、FAQ 和体验收尾，用于忠实回归、替换素材与逐步二次创作。
+Verminoble 是一个使用 Vite、React、TypeScript 与 React Three Fiber 逐步重建的沉浸式水彩体验。迁移只替换工程实现；当前可见 UI、英文文案、字号、双阶段加载、滚动节奏、六组景观、声音行为和页面尾部均以只读原版源码为准。
 
-Benefits、FAQ、订阅按钮和相关英文仅作为原版静态体验内容保留；其中订阅、赠送、邮箱、社交分享与奖项文字均不执行页面跳转。项目没有对应的账户、商城、支付、订阅后端或 WordPress 服务。
+订阅、赠送、邮箱、Facebook、X 和奖项文字按项目约定保留为静态展示，不导航、不打开新窗口。项目不包含 WordPress、账户、商城、支付、订阅后端、CMS 或路由。
+
+## 当前迁移状态
+
+工程处于受回归保护的双运行时阶段：
+
+- 默认：旧压缩 WebGL 引擎，由 React 的 `LegacyRuntimeBridge` 隔离加载，作为可运行和视觉验收基线。
+- `?runtime=legacy`：显式选择兼容基线。
+- `?runtime=r3f`：选择新的 React Three Fiber 预览运行时。
+
+R3F 版已经具备统一状态机、双加载器、原生连续滚动、三组诗句、六场景全屏视频、返回、声音、Restart、Benefits、五项 FAQ 和最终收尾；GLB 相机动画、纹理图集、KTX2、LUT、视频与音频均进入强类型资源定义和加载链。
+
+R3F 水彩着色、纸张/噪声、SDF 遮罩、地面图层和后处理尚未达到原版逐帧视觉等价，因此默认运行时不会提前切换，也不会删除旧 `app.js`、兼容 DOM 或 `/wp-content/` 资源路径。只有完整视觉回归通过后才执行清除阶段。
+
+只读事实基准位于 `C:\Users\Administrator\Desktop\网页(1)`。测试可以读取和启动它，但不得修改其中任何文件。
 
 ## 开发
 
-要求：Node.js 20.19+。本项目使用 npm。
+要求 Node.js 20.19+，使用 npm：
 
 ```bash
 npm install
 npm run dev
 ```
 
-Vite 会显示本地访问地址，通常是 `http://localhost:5173`。
+Vite 通常提供 `http://localhost:5173`。访问 `http://localhost:5173/?runtime=r3f` 可检查新运行时。
 
-常用命令：
+质量命令：
 
 ```bash
-npm run lint          # 代码规范检查
-npm run typecheck     # TypeScript 类型检查
-npm run test          # 组件测试
-npm run check:assets  # 检查六组视频与音频资源
-npm run build         # 生产构建
-npm run preview       # 预览生产构建
+npm run lint
+npm run typecheck
+npm run test
+npm run check:assets
+npm run build
+npm run preview
+npm run test:e2e
 ```
 
-## 架构
+`test:e2e` 使用 Playwright 在桌面和移动视口对照只读原版，检查 legacy 几何、双加载阶段、连续滚动、六景观、FAQ、Restart、静态外链和控制台错误。
+
+## 目录与边界
 
 ```text
 src/
-├── app/                         # 应用入口
-├── content/                     # 可编辑文案与场景资源清单
-├── features/experience/         # 沉浸体验与旧运行时桥接
-├── styles/                      # 主题令牌与全局样式
-└── test/                        # 测试初始化
+├── app/                              # React 入口与受控第一加载器
+├── content/                          # ExperienceDefinition、诗句、尾部、场景与资源清单
+├── features/experience/
+│   ├── runtime/                      # 统一运行时契约、reducer、输入、音频与性能分级
+│   ├── r3f/                          # R3F 世界、源资源管线与全屏视频景观
+│   ├── LegacyRuntimeBridge.tsx       # 旧引擎唯一入口
+│   └── OriginalExperienceTail.tsx    # 数据驱动的原版尾部结构
+├── styles/                           # 全局约束与主题令牌
+└── test/                             # Vitest 环境
 
-public/wp-content/themes/davidwhyte/
-├── app.js                       # 临时兼容的压缩 WebGL 运行时
-├── style.css、loader.css         # 体验样式兼容层
-└── resources/assets/            # 模型、纹理、字体、视频与音频
+tests/e2e/                            # Playwright 双视口回归
+public/wp-content/themes/davidwhyte/  # 验收期只读兼容运行时与原素材
+工程记忆/                             # ADR、当前状态、知识和任务日志
 ```
 
-`LegacyRuntimeBridge` 是唯一接触旧运行时的 React 模块。它渲染 Canvas、视频、音频、加载器和必要的兼容节点；`OriginalExperienceTail` 用 React 保留原版体验尾部的 DOM 契约。项目运行不依赖 WordPress 服务。
-
-旧运行时仍硬编码使用 `/wp-content/themes/davidwhyte/resources/assets/` 路径，因此这些文件暂时保留在 Vite 的 `public` 目录中。这是静态兼容路径，不代表项目继续使用 WordPress。
+`ExperienceDefinition` 是新运行时的配置入口；`sceneManifest` 已是 R3F 六场景视频的唯一来源。legacy 内部仍保留其硬编码映射，因此迁移验收前不要改变原目录和文件名。
 
 ## 内容与素材替换
 
-- 中文加载、按钮和三段文字：编辑 `src/content/experience.ts`。
-- 六组场景视频映射：编辑 `src/content/scenes.ts`。
-- 当前运行时尚未读取场景清单来加载视频，因此替换媒体时仍须保持原有 `desktop/mobile`、`base/over`、`1-6` 文件结构和名称。
-- 每次替换资源后运行 `npm run check:assets`，并在桌面和移动端实际体验场景切换。
-- 当 WebGL 引擎被重写为可维护模块后，`sceneManifest` 将成为运行时唯一的场景资源来源。
+- 诗句和控制文字：`src/content/experience.ts`
+- 六场景标题、视频与源资源：`src/content/scenes.ts`
+- Benefits、FAQ、静态订阅与收尾：`src/content/tail.ts`
+- 原版纹理图集切片与图层时序：`src/content/atlas.ts`
 
-## 兼容层的当前边界
+当前阶段的目标是技术等价迁移，不是视觉二次创作。替换素材前先建立独立创作分支，并保留 `desktop/mobile`、`base/over`、`1-6` 兼容关系。每次资源变化后至少运行 `npm run check:assets`、`npm run test:e2e` 和 `npm run build`。
 
-当前压缩的 `app.js` 负责 Canvas、WebGL、视频纹理、音频和 “Open the landscape” 全屏状态。它没有可维护的源模块，因此本阶段不直接编辑它。
+## 基线、Git 与版权
 
-画布内由该运行时绘制的英文景观标题、“Open the landscape” 及现有可见控件暂按只读源码保留。后续重写引擎后，画布内文案和资源映射会一并配置化；未经明确授权，不改变当前原版 UI 与交互。
-
-## 基线与版权
-
-迁移前的完整静态快照已在本地 Git 标签 `baseline/static-replica-2026-08-22` 中归档。可通过以下命令查看：
+完整静态复刻保存在本地标签 `baseline/static-replica-2026-08-22`：
 
 ```bash
 git show baseline/static-replica-2026-08-22
 ```
 
-当前素材、字体、模型、音频和原站文本仅可用于本地实验与技术参考。任何公开发布前，都必须完成品牌替换、素材授权或替换、外链审查和版权清理。
+运行开发或测试不会自动提交，也不会自动推送远程。只有明确执行 `git commit` 和 `git push` 才会更新仓库。
+
+原始媒体、字体、模型、音频和文本仅限本地实验与技术参考。公开发布前必须完成品牌替换、素材授权或替换、外链审查和版权清理。
 
 ## 工程记忆
 
-项目记忆不与源码混放，统一位于 [`工程记忆/`](./工程记忆/)。开始新任务前请先阅读 [`工程记忆/AGENTS.md`](./工程记忆/AGENTS.md)。
+工程记忆集中在 [`工程记忆/`](./工程记忆/)，不散落到项目根目录：
 
 ```bash
-python 工程记忆/工具/memory_lint.py check
 python 工程记忆/工具/memory_lint.py index
+python 工程记忆/工具/memory_lint.py check
 ```

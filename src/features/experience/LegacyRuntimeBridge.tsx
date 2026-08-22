@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react';
-import type { ExperienceCopy, PoemBlock } from '../../content/experience';
+import type { PoemBlock } from '../../content/experience';
 import { loadLegacyRuntime } from './legacy-runtime';
 import { OriginalExperienceTail } from './OriginalExperienceTail';
-
-interface LegacyRuntimeBridgeProps {
-  copy: ExperienceCopy;
-}
+import { SourceSoundControl } from './SourceSoundControl';
+import type { ExperienceRuntimeProps } from './runtime/contract';
 
 function Poem({ poem }: { poem: PoemBlock }) {
   return (
@@ -17,16 +15,8 @@ function Poem({ poem }: { poem: PoemBlock }) {
   );
 }
 
-function WaveGlyph() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 921.5 41.9">
-      <path fill="none" stroke="currentColor" d="M0 .5c19.1 0 19.1 40.9 37.7 40.9C56.8 41.4 56.8.5 75.4.5c19.1 0 19.1 40.9 37.7 40.9" />
-      <path fill="none" stroke="currentColor" d="M113 40.9c19.1 0 19.1-38.1 37.7-38.1 19.1 0 19.1 33.1 37.7 33.1 19.1 0 19.1-27.7 37.7-27.7" />
-    </svg>
-  );
-}
-
-export function LegacyRuntimeBridge({ copy }: LegacyRuntimeBridgeProps) {
+export function LegacyRuntimeBridge({ definition }: ExperienceRuntimeProps) {
+  const { copy } = definition;
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -93,12 +83,10 @@ export function LegacyRuntimeBridge({ copy }: LegacyRuntimeBridgeProps) {
           </div>
           <button className="xp-scrollToExplore hidden" type="button"><span>{copy.scrollHint}</span></button>
           <div className="xp-fulltext" />
-          <button className="sound hidden is-off" type="button" aria-label={copy.soundOn} title={copy.soundOn}>
-            <span className="sound__container"><WaveGlyph /></span>
-          </button>
+          <SourceSoundControl hidden soundOffLabel={copy.soundOff} soundOnLabel={copy.soundOn} />
         </section>
 
-        <OriginalExperienceTail />
+        <OriginalExperienceTail runtime="legacy" />
       </section>
       </div>
 

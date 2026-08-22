@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en-US">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -71,27 +71,6 @@
         }
       </style>
 
-      <script>
-        const $loader = document.getElementById('loader');
-        const $progress = $loader.querySelector('.loader-bar-animated');
-        window.loaderProgress = 0;
-
-        const loaderUrl = new URLSearchParams(window.location.search);
-        if (loaderUrl.has('skipRegister')) document.body.style.opacity = 0;
-        if (loaderUrl.has('skip') || loaderUrl.has('skipRegister')) $loader.style.display = 'none';
-        else setTimeout(initLoad, 1000);
-
-        function initLoad() {
-          setTimeout(updateProgress, 200);
-        }
-
-        function updateProgress() {
-          window.loaderProgress += 1;
-          $progress.style.transform = `scaleX(${window.loaderProgress}%)`;
-
-          if (window.loaderProgress < 100) window.loaderTimeout = setTimeout(updateProgress, 30);
-        }
-      </script>
     </div>
     <div id="verminoble-app"></div>
     <script type="module" src="/src/main.tsx"></script>

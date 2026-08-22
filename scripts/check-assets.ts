@@ -2,7 +2,7 @@ import { access } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { sceneManifest, soundManifest } from '../src/content/scenes.ts';
+import { fontAssets, sceneManifest, soundManifest, worldAssets } from '../src/content/scenes.ts';
 
 const projectRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const publicRoot = join(projectRoot, 'public');
@@ -13,7 +13,11 @@ const paths = [
     scene.videos.mobile.base,
     scene.videos.mobile.over
   ]),
-  ...soundManifest
+  ...soundManifest,
+  ...Object.values(fontAssets),
+  ...Object.entries(worldAssets)
+    .filter(([key, value]) => key !== 'basisTranscoderPath' && typeof value === 'string')
+    .map(([, value]) => value as string),
 ];
 const missing: string[] = [];
 
