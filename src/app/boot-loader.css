@@ -1,0 +1,43 @@
+.verminoble-boot-loader {
+  align-items: center;
+  background: #090b0a;
+  color: #f4f2eb;
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  position: fixed;
+  z-index: 99999;
+}
+
+.verminoble-boot-loader__content {
+  display: grid;
+  gap: 1rem;
+  inline-size: min(15rem, calc(100vw - 4rem));
+}
+
+.verminoble-boot-loader__wordmark {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.65rem, 4vw, 2.25rem);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  text-align: center;
+}
+
+.verminoble-boot-loader__track,
+.verminoble-boot-loader__progress {
+  block-size: 1px;
+  display: block;
+  inline-size: 100%;
+}
+
+.verminoble-boot-loader__track {
+  background: rgb(255 255 255 / 14%);
+  overflow: hidden;
+}
+
+.verminoble-boot-loader__progress {
+  background: currentColor;
+  transform-origin: left;
+  will-change: transform;
+}

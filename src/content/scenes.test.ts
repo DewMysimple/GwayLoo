@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { fontAssets, sceneManifest, soundManifest, worldAssets } from './scenes';
+import { experienceAssets } from './assets';
+import { sceneManifest } from './scenes';
 
 describe('experience asset manifests', () => {
   it('keeps the six source scenes ordered and fully mapped for both devices', () => {
@@ -15,12 +16,13 @@ describe('experience asset manifests', () => {
   });
 
   it('declares source audio, fonts, model, shader textures, KTX2 and LUT assets', () => {
-    expect(soundManifest).toHaveLength(5);
-    expect(Object.values(fontAssets)).toHaveLength(2);
-    expect(worldAssets.model).toMatch(/scene\.glb$/);
-    expect(worldAssets.groundAtlas).toMatch(/\.ktx2$/);
-    expect(worldAssets.dryLut).toMatch(/\.3DL$/);
-    expect(worldAssets.inkLut).toMatch(/\.3DL$/);
-    expect(worldAssets.msdfFontData).toMatch(/\.json$/);
+    expect(Object.values(experienceAssets.audio)).toHaveLength(5);
+    expect(Object.values(experienceAssets.fonts)).toHaveLength(2);
+    expect(experienceAssets.world.model).toMatch(/scene\.glb$/);
+    expect(experienceAssets.world.groundAtlas).toMatch(/\.ktx2$/);
+    expect(experienceAssets.world.dryLut).toMatch(/\.3DL$/);
+    expect(experienceAssets.world.inkLut).toMatch(/\.3DL$/);
+    expect(experienceAssets.world.msdfFontData).toMatch(/\.json$/);
+    expect(JSON.stringify(experienceAssets)).not.toContain(['/wp', 'content/'].join('-'));
   });
 });

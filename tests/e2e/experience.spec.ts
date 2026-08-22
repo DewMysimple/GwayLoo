@@ -1,5 +1,13 @@
 import { expect, test } from '@playwright/test';
 
+test.beforeEach(async ({ page }, testInfo) => {
+  if (testInfo.project.name !== 'low-performance') return;
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'deviceMemory', { configurable: true, value: 2 });
+    Object.defineProperty(navigator, 'hardwareConcurrency', { configurable: true, value: 2 });
+  });
+});
+
 async function readLayoutGeometry(page: import('@playwright/test').Page) {
   return page.evaluate(() => {
     const tail = document.querySelector<HTMLElement>('.advantages-section');
@@ -18,15 +26,15 @@ test('legacy geometry remains aligned with the read-only source', async ({ page 
   await page.waitForTimeout(1_000);
   const reference = await readLayoutGeometry(page);
 
-  await page.goto('/?skip', { waitUntil: 'networkidle' });
+  await page.goto('/?runtime=legacy&skip', { waitUntil: 'networkidle' });
   await page.waitForTimeout(1_000);
   const current = await readLayoutGeometry(page);
 
   expect(current).toEqual(reference);
 });
 
-test('legacy remains the source-faithful migration default', async ({ page }) => {
-  await page.goto('/?skip');
+test('legacy remains available as the source-faithful migration fallback', async ({ page }) => {
+  await page.goto('/?runtime=legacy&skip');
   await expect(page.locator('.experience-shell')).toBeVisible();
   await expect(page.locator('[data-runtime="r3f"]')).toHaveCount(0);
   await expect(page.locator('.advantages-section a')).toHaveCount(0);
@@ -35,7 +43,7 @@ test('legacy remains the source-faithful migration default', async ({ page }) =>
 });
 
 test('legacy FAQ is controlled once by the source runtime', async ({ page }) => {
-  await page.goto('/?skip', { waitUntil: 'networkidle' });
+  await page.goto('/?runtime=legacy&skip', { waitUntil: 'networkidle' });
   const item = page.locator('[data-component="InternalFaqItem"]').first();
   const wrapper = item.locator('.content-wrapper');
   await item.scrollIntoViewIfNeeded();
@@ -50,8 +58,8 @@ test('legacy FAQ is controlled once by the source runtime', async ({ page }) => 
     .toBe(0);
 });
 
-test('R3F preserves the two loading stages', async ({ page }) => {
-  await page.goto('/?runtime=r3f');
+test('R3F is the default and preserves the two loading stages', async ({ page }) => {
+  await page.goto('/');
   await expect(page.locator('#loader')).toBeVisible();
   await expect(page.locator('#loader')).toBeHidden({ timeout: 8_000 });
   await expect(page.locator('.r3f-asset-loader')).toBeVisible();
@@ -72,6 +80,7 @@ test('R3F scroll, landscapes, FAQ, static links and restart stay in-page', async
   const errors: string[] = [];
   const badResponses: string[] = [];
   const externalRequests: string[] = [];
+  const legacyRequests: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (message) => {
     if (message.type() === 'error') errors.push(message.text());
@@ -81,13 +90,19 @@ test('R3F scroll, landscapes, FAQ, static links and restart stay in-page', async
   });
   page.on('request', (request) => {
     const url = new URL(request.url());
+    if (url.pathname.startsWith('/wp-content/') || url.pathname.startsWith('/wp-includes/')) {
+      legacyRequests.push(request.url());
+    }
     if ((url.protocol === 'http:' || url.protocol === 'https:') && url.hostname !== '127.0.0.1') {
       externalRequests.push(request.url());
     }
   });
 
-  await page.goto('/?runtime=r3f&skip');
+  await page.goto('/?skip');
   await expect(page.locator('[data-runtime="r3f"]')).toBeVisible();
+  if (testInfo.project.name === 'low-performance') {
+    await expect(page.locator('[data-runtime="r3f"]')).toHaveAttribute('data-performance-tier', 'low');
+  }
   await expect(page.locator('.r3f-asset-loader')).toBeHidden();
   const initialUrl = page.url();
 
@@ -147,4 +162,5 @@ test('R3F scroll, landscapes, FAQ, static links and restart stay in-page', async
   expect(errors).toEqual([]);
   expect(badResponses).toEqual([]);
   expect(externalRequests).toEqual([]);
+  expect(legacyRequests).toEqual([]);
 });

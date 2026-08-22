@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { PoemBlock } from '../../content/experience';
-import { loadLegacyRuntime } from './legacy-runtime';
+import { loadLegacyRuntime, syncLegacyBootState } from './legacy-runtime';
 import { OriginalExperienceTail } from './OriginalExperienceTail';
 import { SourceSoundControl } from './SourceSoundControl';
 import type { ExperienceRuntimeProps } from './runtime/contract';
@@ -15,7 +15,7 @@ function Poem({ poem }: { poem: PoemBlock }) {
   );
 }
 
-export function LegacyRuntimeBridge({ definition }: ExperienceRuntimeProps) {
+export function LegacyRuntimeBridge({ boot, definition }: ExperienceRuntimeProps) {
   const { copy } = definition;
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
 
@@ -24,6 +24,10 @@ export function LegacyRuntimeBridge({ definition }: ExperienceRuntimeProps) {
       setRuntimeError(error instanceof Error ? error.message : '旧体验运行时加载失败。');
     });
   }, []);
+
+  useEffect(() => {
+    syncLegacyBootState(boot);
+  }, [boot]);
 
   return (
     <div className="experience-shell" aria-label={`${copy.brandName} 沉浸体验`}>

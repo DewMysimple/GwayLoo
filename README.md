@@ -1,20 +1,19 @@
 # Verminoble
 
-Verminoble 是一个使用 Vite、React、TypeScript 与 React Three Fiber 逐步重建的沉浸式水彩体验。迁移只替换工程实现；当前可见 UI、英文文案、字号、双阶段加载、滚动节奏、六组景观、声音行为和页面尾部均以只读原版源码为准。
+Verminoble 是一个使用 Vite、React、TypeScript 与 React Three Fiber 构建的沉浸式水彩体验。新运行时保留双阶段加载、滚动、诗句、六组景观、声音、FAQ、Restart 和连续页面尾部等行为契约，同时允许视觉进入独立的 Verminoble 设计系统。
 
 订阅、赠送、邮箱、Facebook、X 和奖项文字按项目约定保留为静态展示，不导航、不打开新窗口。项目不包含 WordPress、账户、商城、支付、订阅后端、CMS 或路由。
 
 ## 当前迁移状态
 
-工程处于受回归保护的双运行时阶段：
+工程处于 R3F 默认、legacy 短期可回退阶段：
 
-- 默认：旧压缩 WebGL 引擎，由 React 的 `LegacyRuntimeBridge` 隔离加载，作为可运行和视觉验收基线。
-- `?runtime=legacy`：显式选择兼容基线。
-- `?runtime=r3f`：选择新的 React Three Fiber 预览运行时。
+- 默认及 `?runtime=r3f`：可维护的 React Three Fiber 运行时。
+- `?runtime=legacy`：显式选择旧压缩运行时，仅用于短期对照与回退。
 
 R3F 版已经具备统一状态机、双加载器、原生连续滚动、三组诗句、六场景全屏视频、返回、声音、Restart、Benefits、五项 FAQ 和最终收尾；GLB 相机动画、纹理图集、KTX2、LUT、视频与音频均进入强类型资源定义和加载链。
 
-R3F 水彩着色、纸张/噪声、SDF 遮罩、地面图层和后处理尚未达到原版逐帧视觉等价，因此默认运行时不会提前切换，也不会删除旧 `app.js`、兼容 DOM 或 `/wp-content/` 资源路径。只有完整视觉回归通过后才执行清除阶段。
+R3F 水彩材质已实际使用 atlas、mask、SDF、纸张、噪声、地面 KTX2 和 LUT，并按性能档位降级。新运行时只从 `/assets/` 读取资源，不加载旧主题 CSS、WordPress 路径或旧脚本。旧 `app.js`、兼容 DOM 和 `/wp-content/` 仍为显式 legacy 回退保留，完成一轮人工视觉验收后进入最终清除阶段。
 
 只读事实基准位于 `C:\Users\Administrator\Desktop\网页(1)`。测试可以读取和启动它，但不得修改其中任何文件。
 
@@ -27,7 +26,7 @@ npm install
 npm run dev
 ```
 
-Vite 通常提供 `http://localhost:5173`。访问 `http://localhost:5173/?runtime=r3f` 可检查新运行时。
+Vite 通常提供 `http://localhost:5173`。直接访问该地址使用 R3F；`?runtime=legacy` 仅用于迁移对照。
 
 质量命令：
 
@@ -35,13 +34,14 @@ Vite 通常提供 `http://localhost:5173`。访问 `http://localhost:5173/?runti
 npm run lint
 npm run typecheck
 npm run test
+npm run check:architecture
 npm run check:assets
 npm run build
 npm run preview
 npm run test:e2e
 ```
 
-`test:e2e` 使用 Playwright 在桌面和移动视口对照只读原版，检查 legacy 几何、双加载阶段、连续滚动、六景观、FAQ、Restart、静态外链和控制台错误。
+`test:e2e` 使用 Playwright 在桌面、移动和低性能视口检查 legacy 回退几何，以及默认 R3F 的双加载阶段、连续滚动、六景观、FAQ、Restart、网络边界和控制台错误。
 
 ## 目录与边界
 
@@ -58,17 +58,20 @@ src/
 └── test/                             # Vitest 环境
 
 tests/e2e/                            # Playwright 双视口回归
-public/wp-content/themes/davidwhyte/  # 验收期只读兼容运行时与原素材
+public/assets/                        # 新运行时唯一正式资源根目录
+public/wp-content/themes/davidwhyte/  # 短期 legacy 回退运行时与兼容资源
 scene_workbench/                      # 本地三维资产镜像与 Blender 二创工作区
 wiki_memory/                          # ADR、当前状态、知识和任务日志
 ```
 
-`ExperienceDefinition` 是新运行时的配置入口；`sceneManifest` 已是 R3F 六场景视频的唯一来源。legacy 内部仍保留其硬编码映射，因此迁移验收前不要改变原目录和文件名。
+`ExperienceDefinition` 是新运行时的配置入口；`experienceAssets` 和 `sceneManifest` 是 R3F 资源的唯一来源。`npm run check:architecture` 会阻止新代码重新引用 `/wp-content/`、legacy 全局变量或旧 HTML 注入。
 
 ## 内容与素材替换
 
 - 诗句和控制文字：`src/content/experience.ts`
-- 六场景标题、视频与源资源：`src/content/scenes.ts`
+- 模型、纹理、字体、音频和基础资源：`src/content/assets.ts`
+- 六场景标题与视频：`src/content/scenes.ts`
+- 相机、诗句和场景时间线：`src/content/timeline.ts`
 - Benefits、FAQ、静态订阅与收尾：`src/content/tail.ts`
 - 原版纹理图集切片与图层时序：`src/content/atlas.ts`
 

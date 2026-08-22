@@ -2,14 +2,14 @@
   font-family: 'Verminoble Canela';
   font-style: normal;
   font-weight: 100;
-  src: url('/wp-content/themes/davidwhyte/resources/assets/fonts/CanelaText-Thin.woff2') format('woff2');
+  src: url('/assets/fonts/CanelaText-Thin.woff2') format('woff2');
 }
 
 @font-face {
   font-family: 'Verminoble Roobert';
   font-style: normal;
   font-weight: 400;
-  src: url('/wp-content/themes/davidwhyte/resources/assets/fonts/Roobert-Regular.woff2') format('woff2');
+  src: url('/assets/fonts/Roobert-Regular.woff2') format('woff2');
 }
 
 .r3f-experience-shell {

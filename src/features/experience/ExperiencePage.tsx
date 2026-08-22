@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react';
+import type { BootState } from '../../app/boot';
 import { experienceDefinition } from '../../content/definition';
 import { LegacyRuntimeBridge } from './LegacyRuntimeBridge';
 import { resolveRuntime } from './runtime/selection';
@@ -8,15 +9,20 @@ const R3FExperienceRuntime = lazy(async () => {
   return { default: module.R3FExperienceRuntime };
 });
 
-export function ExperiencePage() {
-  const runtime = resolveRuntime(window.location.search);
+interface ExperiencePageProps {
+  boot: BootState;
+  search?: string;
+}
+
+export function ExperiencePage({ boot, search = window.location.search }: ExperiencePageProps) {
+  const runtime = resolveRuntime(search);
   if (runtime === 'r3f') {
     return (
       <Suspense fallback={null}>
-        <R3FExperienceRuntime definition={experienceDefinition} />
+        <R3FExperienceRuntime boot={boot} definition={experienceDefinition} />
       </Suspense>
     );
   }
 
-  return <LegacyRuntimeBridge definition={experienceDefinition} />;
+  return <LegacyRuntimeBridge boot={boot} definition={experienceDefinition} />;
 }

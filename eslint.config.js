@@ -10,6 +10,7 @@ export default tseslint.config(
       'dist',
       'node_modules',
       'public/wp-content',
+      'public/assets/experience/libs',
       'scene_workbench/source_snapshot',
       'scene_workbench/generated',
       'scene_workbench/blender'

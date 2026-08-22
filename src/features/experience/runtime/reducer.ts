@@ -1,17 +1,19 @@
 import type { SceneId } from '../../../content/scenes';
+import { experienceTimeline } from '../../../content/timeline';
 import type { ExperienceRuntimeAction, ExperienceRuntimeState, PerformanceTier } from './types';
 
 const poemForProgress = (progress: number): 0 | 1 | 2 => {
-  if (progress < 0.32) return 0;
-  if (progress < 0.62) return 1;
+  if (progress < experienceTimeline.poemStartProgress[1]) return 0;
+  if (progress < experienceTimeline.poemStartProgress[2]) return 1;
   return 2;
 };
 
 const sceneForProgress = (progress: number): SceneId => {
-  const starts = [0, 8.25 / 59.7666666667, 15.5 / 59.7666666667, 20 / 59.7666666667, 33 / 59.7666666667, 39.5 / 59.7666666667];
   let scene: SceneId = 1;
-  starts.forEach((start, index) => {
-    if (progress >= start) scene = (index + 1) as SceneId;
+  experienceTimeline.sceneStartSeconds.forEach((startSeconds, index) => {
+    if (progress >= startSeconds / experienceTimeline.cameraDurationSeconds) {
+      scene = (index + 1) as SceneId;
+    }
   });
   return scene;
 };

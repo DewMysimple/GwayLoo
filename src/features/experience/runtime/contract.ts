@@ -1,7 +1,9 @@
 import type { ComponentType } from 'react';
+import type { BootState } from '../../../app/boot';
 import type { ExperienceDefinition } from '../../../content/definition';
 
 export interface ExperienceRuntimeProps {
+  boot: BootState;
   definition: ExperienceDefinition;
 }
 

@@ -2,9 +2,11 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { ExperiencePage } from './ExperiencePage';
 
+const completeBoot = { complete: true, progress: 100, skipped: true } as const;
+
 describe('ExperiencePage', () => {
   it('renders the original immersive experience contract', () => {
-    render(<ExperiencePage />);
+    render(<ExperiencePage boot={completeBoot} search="?runtime=legacy" />);
 
     expect(screen.getByLabelText('Verminoble 沉浸体验')).toBeInTheDocument();
     expect(screen.getByText('Loading')).toBeInTheDocument();

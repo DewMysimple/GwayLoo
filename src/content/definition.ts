@@ -1,21 +1,18 @@
+import { experienceAssets } from './assets';
 import { experienceCopy } from './experience';
-import { fontAssets, sceneManifest, soundManifest, worldAssets } from './scenes';
+import { sceneManifest } from './scenes';
 import { tailCopy } from './tail';
 
 export interface ExperienceDefinition {
   copy: typeof experienceCopy;
   scenes: typeof sceneManifest;
-  sounds: typeof soundManifest;
-  fonts: typeof fontAssets;
-  world: typeof worldAssets;
+  assets: typeof experienceAssets;
   tail: typeof tailCopy;
 }
 
 export const experienceDefinition: ExperienceDefinition = {
   copy: experienceCopy,
   scenes: sceneManifest,
-  sounds: soundManifest,
-  fonts: fontAssets,
-  world: worldAssets,
+  assets: experienceAssets,
   tail: tailCopy,
 };

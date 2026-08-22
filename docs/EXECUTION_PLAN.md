@@ -1,8 +1,12 @@
 # Verminoble 旧版 WebGL 运行时可维护化执行套餐
 
+## 执行状态（2026-08-23）
+
+阶段 A–E 的架构边界已落地：R3F 已成为默认运行时，资源迁入 `/assets/`，启动状态不再由全局事件驱动，水彩材质开始实际消费 atlas、mask、SDF、纸张、噪声、KTX2 和 LUT。`?runtime=legacy` 暂时保留用于回退；剩余阶段是人工视觉验收后的 legacy 文件与 `/wp-content/` 最终删除。
+
 ## 1. 任务目标
 
-将当前旧版压缩 WebGL 运行时重构为可维护的 TypeScript/React Three Fiber 模块，同时尽量保持默认 legacy 页面已有的视觉、鼠标、滚动、加载、视频、音频和场景切换行为。
+将旧版压缩 WebGL 运行时重构为可维护的 TypeScript/React Three Fiber 模块，同时以显式 legacy 回退页面记录视觉、鼠标、滚动、加载、视频、音频和场景切换行为基线。
 
 本计划针对后续 Sol 执行，不要求 Sol 直接反混淆后照搬压缩代码。旧版运行时应作为可运行行为基线，新实现应通过资源清单、运行时观测、类型化状态和浏览器回归重新建立。
 
@@ -19,11 +23,11 @@
 
 ## 2. 当前事实与不可违反的边界
 
-- 当前默认入口是 legacy；`?runtime=r3f` 只是新运行时验收入口。
-- 旧运行时入口是 `public/wp-content/themes/davidwhyte/app.js`，约 3.8 MB，为打包压缩产物，不直接编辑。
+- 当前默认入口是 R3F；`?runtime=legacy` 是短期回退入口。
+- 旧运行时入口 `public/wp-content/themes/davidwhyte/app.js` 约 3.8 MB，只能由显式 legacy 回退加载，不直接编辑。
 - `src/features/experience/LegacyRuntimeBridge.tsx` 是旧运行时唯一 React 入口；`legacy-runtime.ts` 只负责注入旧脚本。
 - 新实现放在 `src/features/experience/r3f/`、`src/features/experience/runtime/` 和 `src/content/`。
-- 在新实现达到视觉和交互验收标准前，不切换默认运行时，不删除 `app.js`、旧样式、兼容 DOM 或 `/wp-content/` 资源路径。
+- 新运行时资源以 `public/assets/` 为唯一正式边界；人工视觉验收前暂不删除 legacy 回退文件。
 - `scene_workbench/` 是本地美术和 Blender 工作区，不作为 Vite 正式运行时资源来源。
 - 不修改 `C:/Users/Administrator/Desktop/网页(1)`；它只允许读取、启动和测量。
 - 保留当前工作区已有修改；不得执行 `git reset`、`git checkout` 或批量删除。
@@ -34,7 +38,7 @@
 | 旧版行为 | 新实现位置 | 要求 |
 | --- | --- | --- |
 | 旧脚本启动与 DOM 契约 | `LegacyRuntimeBridge.tsx`、`legacy-runtime.ts` | 迁移期保持不变 |
-| 运行时选择 | `runtime/selection.ts` | 默认 legacy，R3F 通过查询参数启用 |
+| 运行时选择 | `runtime/selection.ts` | 默认 R3F，legacy 通过查询参数启用 |
 | 资源定义 | `src/content/definition.ts`、`scenes.ts`、`atlas.ts` | 保持强类型、路径集中管理 |
 | 场景/相机/图层 | `r3f/LandscapeWorld.tsx` | 不依赖压缩变量名；使用稳定对象 ID/名称 |
 | 资源预加载 | `r3f/SourceAssetPipeline.tsx` | 统一进度、错误和缓存行为 |
@@ -51,7 +55,7 @@
 1. 读取项目记忆、README、ADR-006、资源清单、R3F 代码和 Playwright 测试。
 2. 对 `app.js` 做格式化副本或 AST/静态分析副本，但不覆盖正式文件。
 3. 建立模块地图：启动、加载、资源、WebGL、Shader、相机、滚动、鼠标、Raycaster、视频、音频、FAQ 和尾部。
-4. 使用默认 legacy 页面记录桌面/移动截图、加载阶段、滚动节点、鼠标轨迹、点击结果、媒体状态和控制台输出。
+4. 使用显式 legacy 回退页面记录桌面/移动截图、加载阶段、滚动节点、鼠标轨迹、点击结果、媒体状态和控制台输出。
 5. 分析 `app/427.js` 引用的可达性；若无法获得，应在计划和最终报告中明确列为未确认依赖。
 
 输出：审计报告、资源依赖图、旧行为清单、不可确认项和逐项验收指标。此阶段不得修改业务代码。
@@ -63,7 +67,7 @@
 3. 增加或完善资源检查：缺失文件、错误扩展名、desktop/mobile 对称性、base/over 对称性、1-6 编号完整性和 GLB 关键节点。
 4. 保持资源 URL 兼容，不改变旧目录和文件名。
 
-输出：稳定的类型和资源检查，不改变默认 legacy 的可见行为。
+输出：稳定的类型和资源检查，不改变显式 legacy 回退的可见行为。
 
 ### 阶段 C：R3F 场景和材质重写
 
@@ -96,9 +100,9 @@
 
 ### 阶段 F：双轨对照、切换和清理门槛
 
-1. 默认页面继续使用 legacy；R3F 通过 `?runtime=r3f` 对照。
+1. 默认页面使用 R3F；legacy 通过 `?runtime=legacy` 对照。
 2. 在桌面和移动视口对比截图、几何、滚动范围、动画阶段、鼠标轨迹、视频和音频行为。
-3. 只有全部验收通过后才修改默认选择；修改前保留可回退开关。
+3. 自动验收已通过；人工视觉验收完成前保留可回退开关。
 4. 旧文件、兼容路径和 `LegacyRuntimeBridge` 只有在确认无异步 chunk、隐藏 DOM、资源 URL 和行为依赖后才允许删除。
 
 ## 5. 验证命令与验收标准
@@ -116,7 +120,7 @@ npm run test:e2e
 
 验收必须包括：
 
-- 默认 legacy 页面行为未被意外改变；
+- 显式 legacy 回退页面行为未被意外改变；
 - R3F 页面无白屏、资源加载错误或未处理异常；
 - 加载器、诗句、滚动、相机、26 个图层、六组景观、视频、音频、鼠标、返回、Restart、FAQ 和页面尾部均有明确结果；
 - 桌面和移动视口均验证；
@@ -143,7 +147,7 @@ npm run test:e2e
 执行规则：
 - 先验证计划与当前代码、资源和测试是否一致。
 - 旧 app.js 只读，不格式化覆盖、不直接修改、不删除。
-- 默认 legacy 保持为行为和视觉基线；新实现先通过 ?runtime=r3f 验收。
+- 默认 R3F 负责正式行为；显式 legacy 仅作为短期视觉基线和回退。
 - 所有新行为写入 src/ 下可维护的 TypeScript、React Three Fiber、配置和测试模块。
 - 不删除 LegacyRuntimeBridge、兼容 DOM、旧样式、/wp-content/ 资源路径或现有用户修改。
 - 不执行 git reset、git checkout、批量删除或无关格式化。
@@ -163,8 +167,8 @@ npm run test:e2e
 
 ## 7. 当前默认假设
 
-- 目标是完整体验引擎的视觉与交互等价重写，不是只替换 GLB。
-- legacy 在整个迁移期保留并作为回退。
+- 目标是行为等价并建立 Verminoble 新视觉，不再以逐帧复刻为删除门槛。
+- legacy 只在短期验收期保留并作为回退。
 - 新实现以 R3F 为主，但不强行复用旧压缩代码的内部结构。
 - 计划阶段可以生成静态分析副本和报告；不得修改压缩产物本身。
 - 原始素材和旧运行时仅用于本地技术研究，公开发布前仍需完成品牌、授权和外链审查。

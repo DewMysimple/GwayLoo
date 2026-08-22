@@ -1,6 +1,6 @@
 ---
 type: decision
-status: active
+status: superseded
 kind: architecture
 importance: high
 updated: 2026-08-22
@@ -14,7 +14,7 @@ supersedes: null
 
 ## 状态
 
-`active`
+`superseded`，由 [[决策/ADR-007-R3F默认运行时与legacy退场|ADR-007]] 替代。
 
 ## 背景
 

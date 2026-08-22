@@ -1,0 +1,266 @@
+.r3f-experience-shell .advantages-section {
+  background: #413a39;
+  color: #ece9df;
+  font-family: 'Verminoble Roobert', sans-serif;
+  overflow: hidden;
+}
+
+.r3f-experience-shell .advantages-wrapper {
+  min-height: 4200px;
+}
+
+.r3f-experience-shell .advantages-header {
+  align-items: center;
+  display: grid;
+  min-height: 100dvh;
+  padding: 12vh 10vw;
+}
+
+.r3f-experience-shell .advantages-header > div,
+.r3f-experience-shell .advantages-content,
+.r3f-experience-shell .internal-module.faq > .container,
+.r3f-experience-shell .advantages-footer {
+  margin-inline: auto;
+  max-inline-size: 76rem;
+  width: 100%;
+}
+
+.r3f-experience-shell .a-title,
+.r3f-experience-shell .a-footer-title,
+.r3f-experience-shell .internal-module.faq > .container > .title {
+  font-family: 'Verminoble Canela', serif;
+  font-weight: 100;
+  letter-spacing: -0.035em;
+}
+
+.r3f-experience-shell .advantages-header .a-title {
+  font-size: clamp(3.5rem, 8vw, 8.5rem);
+  line-height: 0.92;
+  margin: 0;
+  max-inline-size: 9ch;
+}
+
+.r3f-experience-shell .a-description {
+  font-family: 'Verminoble Canela', serif;
+  font-size: clamp(1.25rem, 2.2vw, 2rem);
+  line-height: 1.35;
+  margin: 3rem 0 0;
+  max-inline-size: 26em;
+}
+
+.r3f-experience-shell .advantages-content {
+  padding: 12rem 10vw 14rem;
+}
+
+.r3f-experience-shell .advantages-content > .a-title {
+  font-size: clamp(3rem, 6vw, 6rem);
+  line-height: 1;
+  margin: 0 0 7rem;
+}
+
+.r3f-experience-shell .a-step-wrapper {
+  border-top: 1px solid rgb(236 233 223 / 30%);
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: minmax(10rem, 0.75fr) minmax(18rem, 1.25fr);
+  padding: 3rem 0 5rem;
+}
+
+.r3f-experience-shell .a-step-title,
+.r3f-experience-shell .a-step-informations {
+  font-size: clamp(1.05rem, 1.6vw, 1.5rem);
+  font-weight: 400;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.r3f-experience-shell .a-step-informations {
+  font-family: 'Verminoble Canela', serif;
+  font-size: clamp(1.5rem, 2.8vw, 2.75rem);
+  font-weight: 100;
+}
+
+.r3f-experience-shell .a-cta-wrapper {
+  align-items: center;
+  border-top: 1px solid rgb(236 233 223 / 30%);
+  display: flex;
+  gap: 2rem;
+  justify-content: space-between;
+  padding: 2rem 0;
+}
+
+.r3f-experience-shell .a-cta-button {
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 0.8rem 1.2rem;
+}
+
+.r3f-experience-shell .internal-module.faq {
+  background: #e7e7e2;
+  color: #413a39;
+  padding: 12rem 10vw 14rem;
+}
+
+.r3f-experience-shell .internal-module.faq > .container > .title {
+  font-size: clamp(3rem, 6vw, 6.5rem);
+  line-height: 0.95;
+  margin: 0 0 8rem;
+  max-inline-size: 8ch;
+}
+
+.r3f-experience-shell .questions > .question {
+  border-top: 1px solid rgb(65 58 57 / 35%);
+  display: grid;
+  gap: 1.5rem 3rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 2.25rem 0;
+}
+
+.r3f-experience-shell .questions > .question:last-child {
+  border-bottom: 1px solid rgb(65 58 57 / 35%);
+}
+
+.r3f-experience-shell .question .title,
+.r3f-experience-shell .question .content-trigger p,
+.r3f-experience-shell .question .answer p {
+  margin: 0;
+}
+
+.r3f-experience-shell .question .title {
+  font-family: 'Verminoble Canela', serif;
+  font-size: clamp(1.4rem, 2.3vw, 2.25rem);
+  font-weight: 100;
+  line-height: 1.25;
+}
+
+.r3f-experience-shell .question .content-trigger {
+  cursor: pointer;
+  min-inline-size: 4rem;
+  text-align: right;
+}
+
+.r3f-experience-shell .question .close,
+.r3f-experience-shell .question.open .view {
+  display: none;
+}
+
+.r3f-experience-shell .question.open .close {
+  display: block;
+}
+
+.r3f-experience-shell .question .content-wrapper {
+  grid-column: 1 / -1;
+  height: 0;
+  overflow: hidden;
+}
+
+.r3f-experience-shell .question .content {
+  padding: 1rem 0 2rem;
+}
+
+.r3f-experience-shell .question .answer {
+  font-family: 'Verminoble Canela', serif;
+  font-size: clamp(1.15rem, 1.8vw, 1.6rem);
+  line-height: 1.55;
+  max-inline-size: 42em;
+}
+
+.r3f-experience-shell .question .answer p + p {
+  margin-top: 1em;
+}
+
+.r3f-experience-shell .advantages-footer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  min-height: 1050px;
+  padding: 10rem 10vw 6rem;
+}
+
+.r3f-experience-shell .a-footer-share {
+  align-self: start;
+  display: flex;
+  gap: 1.5rem;
+}
+
+.r3f-experience-shell .a-footer-share > p,
+.r3f-experience-shell .a-footer-subtitle,
+.r3f-experience-shell .awwards {
+  margin: 0;
+}
+
+.r3f-experience-shell .a-footer-shareBttn + .a-footer-shareBttn {
+  margin-left: 0.75rem;
+}
+
+.r3f-experience-shell .a-footer-subtitle {
+  align-self: center;
+  grid-column: 1 / -1;
+  text-align: center;
+}
+
+.r3f-experience-shell .a-footer-title {
+  align-self: center;
+  font-size: clamp(5rem, 15vw, 13rem);
+  grid-column: 1 / -1;
+  line-height: 0.8;
+  text-align: center;
+}
+
+.r3f-experience-shell .xp-restart {
+  align-self: end;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: inherit;
+  cursor: pointer;
+  justify-self: start;
+  padding: 0.9rem 1.4rem;
+}
+
+.r3f-experience-shell .awwards {
+  align-self: end;
+  font-size: 0.8rem;
+  justify-self: end;
+  max-inline-size: 28rem;
+  text-align: right;
+}
+
+@media (max-width: 767px) {
+  .r3f-experience-shell .advantages-wrapper {
+    min-height: 3900px;
+  }
+
+  .r3f-experience-shell .advantages-header,
+  .r3f-experience-shell .advantages-content,
+  .r3f-experience-shell .internal-module.faq,
+  .r3f-experience-shell .advantages-footer {
+    padding-inline: 7vw;
+  }
+
+  .r3f-experience-shell .advantages-content {
+    padding-block: 9rem 11rem;
+  }
+
+  .r3f-experience-shell .a-step-wrapper {
+    grid-template-columns: 1fr;
+  }
+
+  .r3f-experience-shell .a-cta-wrapper {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .r3f-experience-shell .internal-module.faq {
+    padding-block: 9rem 11rem;
+  }
+
+  .r3f-experience-shell .advantages-footer {
+    grid-template-columns: 1fr;
+    min-height: 900px;
+  }
+
+  .r3f-experience-shell .awwards {
+    justify-self: start;
+    text-align: left;
+  }
+}

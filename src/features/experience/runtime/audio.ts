@@ -1,9 +1,24 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
+import type { ExperienceAudioManifest } from '../../../content/assets';
 
 export interface ExperienceAudioController {
   unmuteFromGesture: () => void;
   playBackFeedback: () => void;
   playLandscapeFeedback: () => void;
+}
+
+interface ExperienceAudioElements {
+  main: HTMLAudioElement;
+  poem: HTMLAudioElement;
+  painting: HTMLAudioElement;
+  feedbackBack: HTMLAudioElement;
+  feedbackLandscape: HTMLAudioElement;
+}
+
+function createAudio(source: string): HTMLAudioElement {
+  const element = new Audio(source);
+  element.preload = 'none';
+  return element;
 }
 
 function resetAndPlay(audio: HTMLAudioElement): void {
@@ -12,69 +27,69 @@ function resetAndPlay(audio: HTMLAudioElement): void {
 }
 
 export function useExperienceAudio(
-  sources: readonly string[],
+  sources: ExperienceAudioManifest,
   muted: boolean,
   landscapeOpen: boolean,
 ): ExperienceAudioController {
   const unlockedRef = useRef(false);
-  const audio = useMemo(() => sources.map((source) => {
-    const element = new Audio(source);
-    element.preload = 'none';
-    return element;
+  const audio = useMemo<ExperienceAudioElements>(() => ({
+    main: createAudio(sources.main),
+    poem: createAudio(sources.poem),
+    painting: createAudio(sources.painting),
+    feedbackBack: createAudio(sources.feedbackBack),
+    feedbackLandscape: createAudio(sources.feedbackLandscape),
   }), [sources]);
+  const allAudio = useMemo(() => Object.values(audio), [audio]);
 
   const activeTrack = useCallback(
-    () => audio[landscapeOpen ? 2 : 0],
+    () => landscapeOpen ? audio.painting : audio.main,
     [audio, landscapeOpen],
   );
 
   const unmuteFromGesture = useCallback(() => {
-    audio.forEach((element) => {
+    allAudio.forEach((element) => {
       if (!unlockedRef.current) element.load();
       element.muted = false;
     });
     unlockedRef.current = true;
-    const active = activeTrack();
-    if (active) void active.play().catch(() => undefined);
-  }, [activeTrack, audio]);
+    void activeTrack().play().catch(() => undefined);
+  }, [activeTrack, allAudio]);
 
   useEffect(() => {
-    const [main, poem, painting] = audio;
-    main.loop = true;
-    poem.loop = true;
-    painting.loop = true;
-
-    audio.forEach((element) => {
+    audio.main.loop = true;
+    audio.poem.loop = true;
+    audio.painting.loop = true;
+    allAudio.forEach((element) => {
       element.muted = muted;
     });
 
     if (muted) {
-      audio.forEach((element) => element.pause());
+      allAudio.forEach((element) => element.pause());
       return;
     }
 
-    const active = landscapeOpen ? painting : main;
-    audio.forEach((element) => {
+    const active = landscapeOpen ? audio.painting : audio.main;
+    allAudio.forEach((element) => {
       if (element !== active) element.pause();
     });
     void active.play().catch(() => undefined);
-  }, [audio, landscapeOpen, muted]);
+  }, [allAudio, audio, landscapeOpen, muted]);
 
   useEffect(() => () => {
-    audio.forEach((element) => {
+    allAudio.forEach((element) => {
       element.pause();
       element.removeAttribute('src');
       element.load();
     });
-  }, [audio]);
+  }, [allAudio]);
 
   return {
     unmuteFromGesture,
     playBackFeedback: () => {
-      if (!muted && audio[3]) resetAndPlay(audio[3]);
+      if (!muted) resetAndPlay(audio.feedbackBack);
     },
     playLandscapeFeedback: () => {
-      if (!muted && audio[4]) resetAndPlay(audio[4]);
+      if (!muted) resetAndPlay(audio.feedbackLandscape);
     },
   };
 }

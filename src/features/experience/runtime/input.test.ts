@@ -11,11 +11,12 @@ describe('runtime input helpers', () => {
     expect(normalizeTouchDelta(440, 500)).toBe(-60);
   });
 
-  it('bounds section progress and keeps legacy as the migration default', () => {
+  it('bounds section progress and keeps R3F as the migration default', () => {
     expect(progressWithinSection(0, 2000, 900, -20)).toBe(0);
     expect(progressWithinSection(0, 2000, 900, 550)).toBe(0.5);
     expect(progressWithinSection(0, 2000, 900, 1500)).toBe(1);
-    expect(resolveRuntime('')).toBe('legacy');
+    expect(resolveRuntime('')).toBe('r3f');
     expect(resolveRuntime('?runtime=r3f')).toBe('r3f');
+    expect(resolveRuntime('?runtime=legacy')).toBe('legacy');
   });
 });

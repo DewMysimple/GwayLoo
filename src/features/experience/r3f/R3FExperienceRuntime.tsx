@@ -1,12 +1,20 @@
 import { useProgress } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
-import { Suspense, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import {
+  Fragment,
+  Suspense,
+  useCallback,
+  useEffect,
+  useReducer,
+  useRef,
+  useState,
+} from 'react';
 import type { ExperienceDefinition } from '../../../content/definition';
-import { onBootComplete } from '../../../app/boot-loader';
 import { OriginalExperienceTail } from '../OriginalExperienceTail';
 import { SourceSoundControl } from '../SourceSoundControl';
 import { useExperienceAudio } from '../runtime/audio';
 import { progressWithinSection } from '../runtime/input';
+import { useDeviceKind } from '../runtime/device';
 import { detectPerformanceTier } from '../runtime/performance';
 import { createInitialRuntimeState, experienceRuntimeReducer } from '../runtime/reducer';
 import type { ExperienceRuntimeAction, ExperienceRuntimeActions } from '../runtime/types';
@@ -14,6 +22,8 @@ import type { ExperienceRuntimeProps } from '../runtime/contract';
 import { LandscapeWorld } from './LandscapeWorld';
 import { SourceAssetPipeline } from './SourceAssetPipeline';
 import { VideoLandscape } from './VideoLandscape';
+import './r3f-runtime.css';
+import './experience-tail.css';
 
 function AssetProgressReporter({ dispatch }: { dispatch: React.Dispatch<ExperienceRuntimeAction> }) {
   const { errors, progress } = useProgress();
@@ -40,9 +50,20 @@ function PoemOverlay({ definition, poemId }: { definition: ExperienceDefinition;
         <div
           className={`r3f-poem${poem.id === poemId ? ' is-active' : ''}`}
           data-section={poem.id}
-          dangerouslySetInnerHTML={{ __html: poem.sourceMarkup }}
           key={poem.id}
-        />
+        >
+          {poem.stanzas.map((stanza, stanzaIndex) => (
+            <p key={`${poem.id}-${stanzaIndex}`}>
+              {stanza.lines.map((line, lineIndex) => (
+                <Fragment key={`${line}-${lineIndex}`}>
+                  {line}
+                  {lineIndex < stanza.lines.length - 1 ? <br /> : null}
+                </Fragment>
+              ))}
+              {stanza.credit ? <><br /><br />{stanza.credit}</> : null}
+            </p>
+          ))}
+        </div>
       ))}
     </div>
   );
@@ -73,7 +94,7 @@ function AssetLoader({ definition, progress }: { definition: ExperienceDefinitio
   );
 }
 
-export function R3FExperienceRuntime({ definition }: ExperienceRuntimeProps) {
+export function R3FExperienceRuntime({ boot, definition }: ExperienceRuntimeProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const soundTriggeredRef = useRef(false);
   const [soundVisible, setSoundVisible] = useState(false);
@@ -82,15 +103,12 @@ export function R3FExperienceRuntime({ definition }: ExperienceRuntimeProps) {
     undefined,
     () => createInitialRuntimeState(detectPerformanceTier()),
   );
-  const device = useMemo(
-    () => window.matchMedia('(max-width: 767px)').matches ? 'mobile' as const : 'desktop' as const,
-    [],
-  );
+  const device = useDeviceKind();
   const activeScene = definition.scenes[state.activeScene - 1];
   const landscapeScene = state.landscapeScene
     ? definition.scenes[state.landscapeScene - 1]
     : null;
-  const audio = useExperienceAudio(definition.sounds, state.muted, landscapeScene !== null);
+  const audio = useExperienceAudio(definition.assets.audio, state.muted, landscapeScene !== null);
 
   const unmuteFromGesture = useCallback(() => {
     if (soundTriggeredRef.current) return;
@@ -99,7 +117,9 @@ export function R3FExperienceRuntime({ definition }: ExperienceRuntimeProps) {
     dispatch({ type: 'SET_MUTED', muted: false });
   }, [audio]);
 
-  useEffect(() => onBootComplete(() => dispatch({ type: 'BOOT_COMPLETE' })), []);
+  useEffect(() => {
+    if (boot.complete) dispatch({ type: 'BOOT_COMPLETE' });
+  }, [boot.complete]);
 
   useEffect(() => {
     if (state.phase !== 'loading' || !state.assetsReady) return;
@@ -166,7 +186,12 @@ export function R3FExperienceRuntime({ definition }: ExperienceRuntimeProps) {
   };
 
   return (
-    <main className="r3f-experience-shell" data-phase={state.phase} data-runtime="r3f">
+    <main
+      className="r3f-experience-shell"
+      data-performance-tier={state.performanceTier}
+      data-phase={state.phase}
+      data-runtime="r3f"
+    >
       <section className="r3f-experience" ref={sectionRef}>
         <div className="r3f-stage">
           <Canvas
@@ -176,9 +201,14 @@ export function R3FExperienceRuntime({ definition }: ExperienceRuntimeProps) {
           >
             <color args={['#e7e7e2']} attach="background" />
             <Suspense fallback={null}>
-              <SourceAssetPipeline definition={definition} />
-              <LandscapeWorld definition={definition} progress={state.scrollProgress} />
-              <RuntimeReady dispatch={dispatch} />
+              <SourceAssetPipeline definition={definition}>
+                <LandscapeWorld
+                  definition={definition}
+                  performanceTier={state.performanceTier}
+                  progress={state.scrollProgress}
+                />
+                <RuntimeReady dispatch={dispatch} />
+              </SourceAssetPipeline>
             </Suspense>
           </Canvas>
           <AssetProgressReporter dispatch={dispatch} />

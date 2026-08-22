@@ -26,4 +26,4 @@ supersedes: null
 
 ## 当前决策
 
-- 暂无。
+- [[决策/ADR-007-R3F默认运行时与legacy退场|ADR-007 R3F 默认运行时与 legacy 退场]]
