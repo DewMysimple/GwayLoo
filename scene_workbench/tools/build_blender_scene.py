@@ -343,12 +343,18 @@ def create_watercolor_material(
     output.location = (1000, 80)
     transparent = nodes.new("ShaderNodeBsdfTransparent")
     transparent.location = (620, -40)
-    emission = nodes.new("ShaderNodeEmission")
-    emission.location = (620, 160)
+    surface = nodes.new("ShaderNodeBsdfPrincipled")
+    surface.name = "WATERCOLOR_SURFACE"
+    surface.label = "Atlas color through Blender 5.0 Principled BSDF"
+    surface.location = (620, 160)
+    surface.inputs["Metallic"].default_value = 0.0
+    surface.inputs["Roughness"].default_value = 1.0
+    surface.inputs["Specular IOR Level"].default_value = 0.0
+    surface.inputs["Emission Strength"].default_value = 1.0
     mix = nodes.new("ShaderNodeMixShader")
     mix.location = (820, 100)
     links.new(transparent.outputs[0], mix.inputs[1])
-    links.new(emission.outputs[0], mix.inputs[2])
+    links.new(surface.outputs[0], mix.inputs[2])
     links.new(mix.outputs[0], output.inputs["Surface"])
 
     texcoord = nodes.new("ShaderNodeTexCoord")
@@ -375,7 +381,8 @@ def create_watercolor_material(
     mask_node.location = (-260, -20)
     links.new(atlas_uv.outputs["Vector"], atlas_node.inputs["Vector"])
     links.new(atlas_uv.outputs["Vector"], mask_node.inputs["Vector"])
-    links.new(atlas_node.outputs["Color"], emission.inputs["Color"])
+    links.new(atlas_node.outputs["Color"], surface.inputs["Base Color"])
+    links.new(atlas_node.outputs["Color"], surface.inputs["Emission Color"])
 
     def driven_value(name: str, property_name: str, y: float) -> bpy.types.Node:
         value = nodes.new("ShaderNodeValue")

@@ -314,6 +314,11 @@ def main() -> None:
                 missing_image_data = True
         if len(image_nodes) < 2 or missing_image_data:
             fail(f"{material.name} has missing or unloaded texture nodes", failures)
+        surface = material.node_tree.nodes.get("WATERCOLOR_SURFACE")
+        if surface is None or surface.type != "BSDF_PRINCIPLED":
+            fail(f"{material.name} must use the Blender 5.0 Principled watercolor surface", failures)
+        if any(node.type == "EMISSION" for node in material.node_tree.nodes):
+            fail(f"{material.name} must not use the legacy standalone Emission node", failures)
         if hasattr(material, "preview_render_type") and material.preview_render_type != "FLAT":
             fail(f"{material.name} preview type must be FLAT", failures)
         source_layer = obj.name[5:]
