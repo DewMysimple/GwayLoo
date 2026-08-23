@@ -16,6 +16,7 @@ supersedes: null
 | 时间 | 类型 | 目标 | 状态 | 主题 | 日志 |
 | --- | --- | --- | --- | --- | --- |
 | 2026-08-23 | feature | - | archived | blender-chinese-workspaces | [[日志/2026-08-23-生成Blender项目中文工作区.md|2026-08-23｜生成 Blender 项目中文工作区]] |
+| 2026-08-23 | discussion | 说明网页中鼠标针对水彩图层移动时的交互实现链路。 | archived | watercolor-pointer-interaction-audit | [[日志/2026-08-23-水彩鼠标交互实现审查.md|2026-08-23｜水彩鼠标交互实现审查]] |
 | 2026-08-23 | bug | - | archived | blender-interface-language | [[日志/2026-08-23-Blender界面语言诊断.md|2026-08-23｜Blender 界面语言诊断]] |
 | 2026-08-23 | bug | 修复 Blender 水彩材质黑屏、补齐网页程序化草，并明确禁止构建脚本修改 Blender 用户偏好。 | archived | blender-material-remap-procedural-grass-fix | [[日志/2026-08-23-Blender材质映射与程序化草修复.md|2026-08-23｜Blender 材质映射与程序化草修复]] |
 | 2026-08-23 | bug | - | archived | blender-workspace-names | [[日志/2026-08-23-Blender工作区名称未翻译诊断.md|2026-08-23｜Blender 工作区名称未翻译诊断]] |
