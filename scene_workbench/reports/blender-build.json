@@ -68,6 +68,15 @@
       "SHADOW_sheep_6",
       "SHADOW_sheep_7"
     ],
+    "shadow_render_method": "BLENDED",
+    "shadow_opacity": 0.2,
+    "shadow_scale": 1.02,
+    "shadow_depth_offset": 0.01,
+    "artist_world_color": [
+      0.78,
+      0.78,
+      0.74
+    ],
     "artist_only_collections": [
       "GROUND_AND_PAPER",
       "SHADOW_APPROXIMATION"

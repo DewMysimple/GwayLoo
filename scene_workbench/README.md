@@ -36,7 +36,7 @@ Watercolor opacity is carried by object alpha and read through `OBJECT_ALPHA` in
 
 `PROCEDURAL_GRASS` contains the 23 layers for which the legacy runtime explicitly sets `hasGround: true`. The deterministic Blender mirror contains 3141 editable blade ribbons, the ten source atlas regions, 24 source color-gradient columns, source Poisson-disc spacing and wind/reveal animation channels. `land_back_5`, `background_2` and `viaduc_1` intentionally have no grass because their source configuration disables the ground component. Browser cursor-proximity reveal remains documented as an interaction boundary rather than being visually guessed.
 
-`GROUND_AND_PAPER` and `SHADOW_APPROXIMATION` are artist-only collections. They are visible by default in `ARTIST_EDIT`, where the converted Ground atlas, green grass and 26 editable shadow cards can be inspected together. `WEB_ANIMATION` intentionally excludes these Blender-only presentation approximations and keeps the source-layer mirror boundary. The shadow cards use the source mask, source shadow color/timing metadata and a Principled transparent material; they approximate the legacy WebGL SDF/Shadow Map paper shadow rather than claiming physical-light or pixel-identical behavior.
+`GROUND_AND_PAPER` and `SHADOW_APPROXIMATION` are artist-only collections. They are visible by default in `ARTIST_EDIT`, where the converted Ground atlas, green grass and 26 editable shadow cards can be inspected together. `WEB_ANIMATION` intentionally excludes these Blender-only presentation approximations and keeps the source-layer mirror boundary. The watercolor, grass and shadow cards use smooth blended transparency; watercolor masks clip dark atlas padding and the converted Ground atlas hides its black KTX2 padding by luminance. Shadow cards use the source mask, source shadow color/timing metadata and a Principled transparent material; they approximate the legacy WebGL SDF/Shadow Map paper shadow rather than claiming physical-light or pixel-identical behavior.
 
 The build and validation scripts never change or save Blender user preferences. Blender's built-in interface language therefore follows the user's existing installation settings. The generated project explicitly names its saved workspaces in Chinese so they match the Chinese startup UI; asset, object, material and script identifiers remain portable ASCII English. `--factory-startup` in the background commands isolates automated generation only and does not save factory preferences over the user's configuration.
 
@@ -53,7 +53,7 @@ python scene_workbench/tools/generate_manifests.py
 & 'F:\Blender\blender.exe' --background --factory-startup scene_workbench/blender/Verminoble_Scene_Mirror_5_0.blend --python scene_workbench/tools/validate_blend.py
 ```
 
-To regenerate 20 validation renders (seven animation frames, one artist overview, one material preview, one tree-and-grass preview, four source-camera frames and six landscape frames):
+To regenerate 22 validation renders (seven animation frames, one artist overview, one material preview, one tree-and-grass preview, one shadow preview, one background-card preview, four source-camera frames and six landscape frames):
 
 ```powershell
 & 'F:\Blender\blender.exe' --background --factory-startup scene_workbench/blender/Verminoble_Scene_Mirror_5_0.blend --python scene_workbench/tools/render_validation.py

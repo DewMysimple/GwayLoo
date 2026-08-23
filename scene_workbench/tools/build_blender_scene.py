@@ -53,9 +53,10 @@ SHADOW_SECONDS = 1.0
 GRASS_REVEAL_SECONDS = 1.0
 GRASS_RANDOM_SEED = 20260823
 SHADOW_COLOR = (0.714, 0.714, 0.714, 1.0)
-SHADOW_OPACITY = 0.34
-SHADOW_DEPTH_OFFSET = 0.03
-SHADOW_SCALE = 1.06
+SHADOW_OPACITY = 0.20
+SHADOW_DEPTH_OFFSET = 0.01
+SHADOW_SCALE = 1.02
+ARTIST_WORLD_COLOR = (0.78, 0.78, 0.74)
 GRASS_BLADE_REMAPS = (
     ("blade-1", 0.0078125, 0.0078125, 0.0703125, 0.984375),
     ("blade-7", 0.09375, 0.0078125, 0.0625, 0.953125),
@@ -180,6 +181,16 @@ def configure_scene(scene: bpy.types.Scene, name: str, role: str) -> bpy.types.S
     return scene
 
 
+def set_world_color(world: bpy.types.World, color: tuple[float, float, float]) -> None:
+    """Set both viewport and node-based world colors for deterministic previews."""
+    world.color = color
+    world.use_nodes = True
+    background = world.node_tree.nodes.get("Background") if world.node_tree else None
+    if background is not None:
+        background.inputs["Color"].default_value = (*color, 1.0)
+        background.inputs["Strength"].default_value = 0.8
+
+
 def localize_workspaces() -> None:
     """Make the saved project workspaces match the Chinese Blender startup UI."""
     for english_name, chinese_name in WORKSPACE_NAMES_ZH_CN.items():
@@ -205,6 +216,9 @@ def clear_file() -> tuple[bpy.types.Scene, bpy.types.Scene, bpy.types.Scene]:
         "ARTIST_EDIT",
         "default artist workspace sharing the animated mesh and material datablocks",
     )
+    artist_scene.world = bpy.data.worlds.new("ARTIST_EDIT_PaperWorld")
+    set_world_color(artist_scene.world, ARTIST_WORLD_COLOR)
+    artist_scene["background_policy"] = "Warm paper-gray world; atlas black padding must remain transparent"
     artist_scene["editing_note_zh_cn"] = "默认停在全部图层展开帧；网格和材质与动画场景共享。"
     source_scene = configure_scene(
         bpy.data.scenes.new("SOURCE_REFERENCE"),
@@ -268,9 +282,10 @@ def load_image(path: Path, color_space: str = "sRGB") -> bpy.types.Image:
     return image
 
 
-def configure_transparency(material: bpy.types.Material) -> None:
+def configure_transparency(material: bpy.types.Material, render_method: str = "DITHERED") -> None:
     if hasattr(material, "surface_render_method"):
-        material.surface_render_method = "DITHERED"
+        available = {item.identifier for item in material.bl_rna.properties["surface_render_method"].enum_items}
+        material.surface_render_method = render_method if render_method in available else "DITHERED"
     elif hasattr(material, "blend_method"):
         material.blend_method = "BLEND"
         material.shadow_method = "NONE"
@@ -321,11 +336,12 @@ def create_watercolor_material(
     material.use_nodes = True
     if hasattr(material, "preview_render_type"):
         material.preview_render_type = "FLAT"
-    configure_transparency(material)
+    configure_transparency(material, "BLENDED")
     material.diffuse_color = (1.0, 1.0, 1.0, 1.0)
     material["source_layer"] = layer_name
     material["atlas_remap"] = json.dumps(remap, sort_keys=True)
     material["reveal_start_seconds"] = reveal_start_seconds
+    material["mask_edge_clip"] = "ColorRamp 0.02 -> 0.18; atlas padding is transparent"
     material["source_reveal_durations_seconds"] = json.dumps(
         {
             "alpha": REVEAL_ALPHA_SECONDS,
@@ -415,7 +431,14 @@ def create_watercolor_material(
     alpha_multiply.name = "MASK_X_REVEAL"
     alpha_multiply.operation = "MULTIPLY"
     alpha_multiply.location = (390, -60)
-    links.new(mask_node.outputs["Color"], alpha_multiply.inputs[0])
+    mask_edge = nodes.new("ShaderNodeValToRGB")
+    mask_edge.name = "SOURCE_MASK_EDGE_CLIP"
+    mask_edge.label = "Suppress atlas padding and dark mask fringes"
+    mask_edge.location = (120, -20)
+    mask_edge.color_ramp.elements[0].position = 0.02
+    mask_edge.color_ramp.elements[1].position = 0.18
+    links.new(mask_node.outputs["Color"], mask_edge.inputs["Fac"])
+    links.new(mask_edge.outputs["Color"], alpha_multiply.inputs[0])
     links.new(object_info.outputs["Alpha"], alpha_multiply.inputs[1])
     links.new(alpha_multiply.outputs[0], mix.inputs[0])
 
@@ -438,11 +461,16 @@ def create_watercolor_material(
     return material
 
 
-def create_unlit_image_material(name: str, image: bpy.types.Image, transparent: bool = False) -> bpy.types.Material:
+def create_unlit_image_material(
+    name: str,
+    image: bpy.types.Image,
+    transparent: bool = False,
+    alpha_from_luminance: bool = False,
+) -> bpy.types.Material:
     material = bpy.data.materials.new(name)
     material.use_nodes = True
     if transparent:
-        configure_transparency(material)
+        configure_transparency(material, "BLENDED")
     nodes = material.node_tree.nodes
     links = material.node_tree.links
     nodes.clear()
@@ -467,7 +495,23 @@ def create_unlit_image_material(name: str, image: bpy.types.Image, transparent: 
         transparent_node.location = (100, -120)
         mix = nodes.new("ShaderNodeMixShader")
         mix.location = (330, 0)
-        links.new(image_node.outputs["Alpha"], mix.inputs[0])
+        alpha_socket = image_node.outputs["Alpha"]
+        if alpha_from_luminance:
+            luminance = nodes.new("ShaderNodeRGBToBW")
+            luminance.name = "GROUND_PADDING_LUMINANCE"
+            luminance.label = "Ground atlas black padding mask"
+            luminance.location = (-80, -160)
+            edge = nodes.new("ShaderNodeValToRGB")
+            edge.name = "GROUND_PADDING_EDGE_CLIP"
+            edge.label = "Hide black KTX2 atlas padding"
+            edge.location = (100, -220)
+            edge.color_ramp.elements[0].position = 0.015
+            edge.color_ramp.elements[1].position = 0.06
+            links.new(image_node.outputs["Color"], luminance.inputs["Color"])
+            links.new(luminance.outputs["Val"], edge.inputs["Fac"])
+            alpha_socket = edge.outputs["Color"]
+            material["alpha_from_luminance"] = "ColorRamp 0.015 -> 0.06 hides black atlas padding"
+        links.new(alpha_socket, mix.inputs[0])
         links.new(transparent_node.outputs[0], mix.inputs[1])
         links.new(surface.outputs[0], mix.inputs[2])
         links.new(mix.outputs[0], output.inputs["Surface"])
@@ -547,7 +591,7 @@ def create_grass_material(
     material.use_nodes = True
     if hasattr(material, "preview_render_type"):
         material.preview_render_type = "FLAT"
-    configure_transparency(material)
+    configure_transparency(material, "BLENDED")
     material.diffuse_color = (0.55, 0.64, 0.31, 1.0)
     material["source_algorithm"] = (
         "legacy app.js Grass: PoissonDiskSampling 1.8/2.8/7, clustered 7-24 blades, "
@@ -828,7 +872,7 @@ def create_shadow_material(
     material.use_nodes = True
     if hasattr(material, "preview_render_type"):
         material.preview_render_type = "FLAT"
-    configure_transparency(material)
+    configure_transparency(material, "BLENDED")
     material.diffuse_color = SHADOW_COLOR
     material["source_shadow_color"] = "#b6b6b6"
     material["source_shadow_size"] = 0.5
@@ -1350,7 +1394,12 @@ def build_web_master(
     editable_ground.parent = None
     ground_collection.objects.link(editable_ground)
     editable_ground.matrix_world = source_ground_world_matrix
-    ground_material = create_unlit_image_material("WC_Ground_Atlas", ground_atlas)
+    ground_material = create_unlit_image_material(
+        "WC_Ground_Atlas",
+        ground_atlas,
+        transparent=True,
+        alpha_from_luminance=True,
+    )
     ground_material["source_ktx2"] = relative_to_blend(ASSETS / "textures/grounds/atlas.ktx2")
     ground_material["conversion"] = "KTX2 UASTC/Zstd transcoded losslessly to RGBA8 PNG"
     editable_ground.data.materials.clear()
@@ -1477,6 +1526,11 @@ def build_web_master(
         "procedural_grass_names": grass_objects,
         "shadow_objects": len(shadow_objects),
         "shadow_names": shadow_objects,
+        "shadow_render_method": "BLENDED",
+        "shadow_opacity": SHADOW_OPACITY,
+        "shadow_scale": SHADOW_SCALE,
+        "shadow_depth_offset": SHADOW_DEPTH_OFFSET,
+        "artist_world_color": ARTIST_WORLD_COLOR,
         "artist_only_collections": [ground_collection.name, shadow_collection.name],
         "watercolor_animation_actions": [item["action"] for item in layer_animations],
         "watercolor_animation_end_frame": max(item["end_frame"] for item in layer_animations),
@@ -1642,7 +1696,7 @@ def configure_artist_workspace(
                 shading.use_scene_world = False
                 shading.use_scene_lights = False
                 shading.background_type = "VIEWPORT"
-                shading.background_color = (0.35, 0.35, 0.35)
+                shading.background_color = ARTIST_WORLD_COLOR
     layout = bpy.data.workspaces.get(DEFAULT_WORKSPACE_NAME)
     if layout is not None:
         bpy.context.window.workspace = layout

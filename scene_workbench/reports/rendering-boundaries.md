@@ -23,8 +23,9 @@
 - Reveal opacity is mirrored onto object alpha and consumed by the material's `OBJECT_ALPHA` node. This keeps material previews opaque outside object context without changing animation renders.
 - The legacy runtime creates grass procedurally rather than storing it in the GLB. Blender mirrors the 23 source-enabled ground layers with deterministic Poisson-disc clusters, 3141 editable triangle-ribbon blades, ten source blade atlas regions, 24 color-gradient columns, and wind/reveal channels. Layers with `hasGround: false` remain grass-free.
 - `ARTIST_EDIT` enables the converted Ground atlas and 26 editable `SHADOW_*` cards. `WEB_ANIMATION` intentionally excludes both artist-only collections so source animation remains distinguishable from Blender presentation approximations.
-- The Blender shadow cards use the source mask and `web_shadow_alpha` timing with a gray Principled transparent material. They approximate the legacy WebGL paper-shadow component, whose exact implementation uses SDF distance fields, screen-space shadow maps, noise and custom GLSL.
+- The Blender shadow cards use the source mask and `web_shadow_alpha` timing with a gray Principled material and smooth blended transparency. Their current artist-facing approximation uses opacity 0.20, scale 1.02 and source-depth offset 0.01; the exact WebGL component uses SDF distance fields, screen-space shadow maps, noise and custom GLSL.
 - Ground KTX2 is losslessly transcoded to an RGBA8 PNG for Blender while the KTX2 remains preserved.
+- The converted Ground image retains black atlas padding from the KTX2 extraction. `WC_Ground_Atlas` derives a luminance alpha mask to hide that padding, while the ARTIST_EDIT world and viewport use a warm paper-gray background instead of black.
 - Landscape `OVER_VIDEO` opacity is controlled by `OVER_MIX_CONTROL["mix"]`; it defaults to zero and no unverified transition timing is added.
 - Canela WOFF is converted to a local TTF only for editable title annotations. Runtime MSDF title geometry remains the authoritative source.
 

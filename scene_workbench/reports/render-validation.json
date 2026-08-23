@@ -6,140 +6,154 @@
       "frame": 0,
       "path": "generated/renders/web-animation-0000.png",
       "bytes": 119453,
-      "sha256": "BCBC7D138091E41D0B8572CD01ECF1AED7C2C804182817ED64C9CB47A700B470"
+      "sha256": "962ACC93DAA03125957270AA47D8118B180F7DD62C196255E0F218D355711C6A"
     },
     {
       "scene": "WEB_ANIMATION",
       "frame": 60,
       "path": "generated/renders/web-animation-0060.png",
-      "bytes": 334712,
-      "sha256": "247A48019815D1B657A8648AB87E4921B4B3D86A822D60B6DFB65FA691A9F6AC"
+      "bytes": 336090,
+      "sha256": "98703FE832D7535D9FCC35C545FDF79F19DD87ED49DC91EA5C9494938384C627"
     },
     {
       "scene": "WEB_ANIMATION",
       "frame": 210,
       "path": "generated/renders/web-animation-0210.png",
-      "bytes": 452534,
-      "sha256": "5EAC2EA6DF333ACA768C985EEDF4801ABAF2A318FED110BF9ED0BA5225DF0327"
+      "bytes": 454918,
+      "sha256": "5521F7ED62C43721F8E3F3AF964AAE9C13A6ED912AE6592516EBA6253C0936B0"
     },
     {
       "scene": "WEB_ANIMATION",
       "frame": 420,
       "path": "generated/renders/web-animation-0420.png",
-      "bytes": 552469,
-      "sha256": "295CABF5369A481393940E19D580E0C900EA436A65CD3D6A916AE3FF39CCFC28"
+      "bytes": 555468,
+      "sha256": "501E01E0577033CD7738FBF628A2729563FC4D9D4CDD2F67008A72B3997F68E0"
     },
     {
       "scene": "WEB_ANIMATION",
       "frame": 900,
       "path": "generated/renders/web-animation-0900.png",
-      "bytes": 331605,
-      "sha256": "5F692064572CBE46DA5ED5C254D4BC3BAB47353EDEAD67D561346242E123E5D4"
+      "bytes": 332155,
+      "sha256": "5AAEB56DBFCAEFF5814684BAF8522E0F25CED857DB4578D69D5CE0CC606DDEB5"
     },
     {
       "scene": "WEB_ANIMATION",
       "frame": 1793,
       "path": "generated/renders/web-animation-1793.png",
-      "bytes": 423474,
-      "sha256": "F24ACA215604567456D0116D1E1B06AEFB784EBFB086CCCAC940BF643A11054E"
+      "bytes": 424527,
+      "sha256": "EC10364235F2E9758F42A00020C884BAF33CA462B10D55B502C1DA1ACC7ABB5D"
     },
     {
       "scene": "WEB_ANIMATION",
       "frame": 3586,
       "path": "generated/renders/web-animation-3586.png",
-      "bytes": 711123,
-      "sha256": "C55E55A17A38A5AFE48F9E4C95E0F3E38365535A0930D44B47E4024E729EF206"
+      "bytes": 712411,
+      "sha256": "ABF2B32C376F96079EB8DF8E43C3F72DD4EB7A0CD3277BEC7F8B3C0AFCF78267"
     },
     {
       "scene": "ARTIST_EDIT",
       "frame": 3586,
       "path": "generated/renders/artist-edit-materials.png",
-      "bytes": 811520,
-      "sha256": "A526B0CDAEE4435BC610CC747F3B979566637686FE3A699D3F82F595FF22C022"
+      "bytes": 605332,
+      "sha256": "F289A7F9489118D1C82F67905AD0DFBD417D6FFC7CB925B3ABBF3E1DAB5584C3"
     },
     {
       "scene": "VALIDATION_MATERIAL_PREVIEW",
       "frame": 0,
       "path": "generated/renders/material-preview-tree.png",
-      "bytes": 381081,
-      "sha256": "E964A4E5419734C62577E0AC9B79F592AFD0E3C8B1DBBD4997D7B368754D378C"
+      "bytes": 388070,
+      "sha256": "2FAB446C8BF204F8A9F0594A4E668181635C79233B1E612AF86B0AAED994C05E"
     },
     {
       "scene": "VALIDATION_GRASS_PREVIEW",
       "frame": 3586,
       "path": "generated/renders/grass-preview-tree.png",
-      "bytes": 550314,
-      "sha256": "9E3DABDB85D4D3030FB59F6FC624C007DAAD4A4B3B5F02178EBAF3C4A18F2727"
+      "bytes": 562040,
+      "sha256": "30490586319C1DC5C4E6468E761279D2D2D774AC7E72B92F17E085EB937A1D59"
+    },
+    {
+      "scene": "VALIDATION_SHADOW_PREVIEW",
+      "frame": 3586,
+      "path": "generated/renders/shadow-preview-tree.png",
+      "bytes": 880909,
+      "sha256": "5DB5637B852EA18691D253DA08DE359B7E7A8AB783D09AB3AF1B1987CD4932D9"
+    },
+    {
+      "scene": "VALIDATION_BACKGROUND_PREVIEW",
+      "frame": 3586,
+      "path": "generated/renders/background-preview-card.png",
+      "bytes": 534476,
+      "sha256": "CE73B86E9D5E5EC89CAE456072F39C190E3110AF5BA94CF70E32CDB5344F986C"
     },
     {
       "scene": "SOURCE_REFERENCE",
       "frame": 0,
       "path": "generated/renders/source-camera-0000.png",
       "bytes": 119480,
-      "sha256": "B4E3DFA6525CB5FC126D10CE484563C616FC9BF02FD95465AF9831D79A50D279"
+      "sha256": "229221F2A23864BE53C1EB39FCC587A3A420F3189B8E591DA6552FE7E06BAF03"
     },
     {
       "scene": "SOURCE_REFERENCE",
       "frame": 900,
       "path": "generated/renders/source-camera-0900.png",
       "bytes": 119480,
-      "sha256": "2FA9865442201A6D5F13B2E0646E038CFD13BA7A3691736A9DDCB1FB1F62540C"
+      "sha256": "995ED9ED801252606B2CD6146A2CEC8AFE3FECE83A62312BEDE07C8A9A457E56"
     },
     {
       "scene": "SOURCE_REFERENCE",
       "frame": 1793,
       "path": "generated/renders/source-camera-1793.png",
       "bytes": 119480,
-      "sha256": "CD13DF045AB033201BA49CB0D2BB16B81307584BB6ADAB4EA9D8C3B7303EAB85"
+      "sha256": "9098D7B53EF7AA67298FE900236C6F17FE9F5B4AF611E2AE01D5A8ADB7245F4F"
     },
     {
       "scene": "SOURCE_REFERENCE",
       "frame": 3586,
       "path": "generated/renders/source-camera-3586.png",
       "bytes": 119480,
-      "sha256": "CB30FF79E02223831DBBC1D6AC9A3E061A6D23F606FEF69F7F4ABECFF626EEC6"
+      "sha256": "CF0A26FEF292E47E06C49B05BA4F8A9A97937CE400DE846AFA0A51CA5091B98B"
     },
     {
       "scene": "LANDSCAPE_01_DESKTOP",
       "frame": 0,
       "path": "generated/renders/landscape-01-desktop-base.png",
       "bytes": 37762,
-      "sha256": "A8CCDED2FE0FA075793C86BBBF4D6A13294D6F3FA7BCA10BD4BD657C26229F75"
+      "sha256": "9E0D16D2A3B8329ED54D4B59862A136E4F5D409C485B1DCEA297CD0EFABDB4B8"
     },
     {
       "scene": "LANDSCAPE_02_DESKTOP",
       "frame": 0,
       "path": "generated/renders/landscape-02-desktop-base.png",
       "bytes": 37762,
-      "sha256": "3F753002F47270DFEC04E471EB6667A6EEC575007E63D1295E5904A00EB4218B"
+      "sha256": "36C73035BFFB2A1E168CBEE507A5F85CB8AC9F95CA8FD9BDD9D7F2A1EB8A47DA"
     },
     {
       "scene": "LANDSCAPE_03_DESKTOP",
       "frame": 0,
       "path": "generated/renders/landscape-03-desktop-base.png",
       "bytes": 37762,
-      "sha256": "873326F8ED73619A9965E98FB1B2D877379F5E92A799C239FED7CB6941774923"
+      "sha256": "995BB182C263700E1CB7D7BF671344BCE6BF12DBE0EBAD1A77294BFAF6BED430"
     },
     {
       "scene": "LANDSCAPE_04_DESKTOP",
       "frame": 0,
       "path": "generated/renders/landscape-04-desktop-base.png",
       "bytes": 37762,
-      "sha256": "FC1277D603DC7165D8F722EE9A882BFD29D3DB6984018B7F38C801FE5157585D"
+      "sha256": "8BE2AE3E1CEE7EA1C00477F4D291B5E0E4C03B2925D8EB714C5E798B15B0377A"
     },
     {
       "scene": "LANDSCAPE_05_DESKTOP",
       "frame": 0,
       "path": "generated/renders/landscape-05-desktop-base.png",
       "bytes": 37762,
-      "sha256": "C49A975D126CBF1A17088747051D101142CACF025DD948501FCB17FFE1A9FB31"
+      "sha256": "C391F3BD666258D93B238F4562971746659B8B413BF0AEBDF5F0EB1CEB943219"
     },
     {
       "scene": "LANDSCAPE_06_DESKTOP",
       "frame": 0,
       "path": "generated/renders/landscape-06-desktop-base.png",
       "bytes": 37762,
-      "sha256": "A577430B4591E5E7644F96DB068DF6716ADD9DE8862D0E70A91726E04F58AC8C"
+      "sha256": "1B30A04E5987478F7451F51BEA33ECACC61F8715B1626B957CBCA7F4AF936A8A"
     }
   ]
 }

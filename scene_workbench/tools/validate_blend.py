@@ -439,6 +439,10 @@ def main() -> None:
         ground_surface = ground_material.node_tree.nodes.get("IMAGE_SURFACE")
         if ground_surface is None or ground_surface.type != "BSDF_PRINCIPLED":
             fail("WC_Ground_Atlas must use a Blender 5.0 Principled surface", failures)
+        if hasattr(ground_material, "surface_render_method") and ground_material.surface_render_method != "BLENDED":
+            fail("WC_Ground_Atlas must use smooth blended transparency", failures)
+        if ground_material.node_tree.nodes.get("GROUND_PADDING_EDGE_CLIP") is None:
+            fail("WC_Ground_Atlas is missing the black atlas padding mask", failures)
         if any(node.type == "EMISSION" for node in ground_material.node_tree.nodes):
             fail("WC_Ground_Atlas must not use the legacy standalone Emission node", failures)
 
