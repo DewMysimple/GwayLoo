@@ -17,6 +17,11 @@ supersedes: null
 | --- | --- | --- | --- | --- | --- |
 | 2026-08-23 | feature | - | archived | blender-chinese-workspaces | [[日志/2026-08-23-生成Blender项目中文工作区.md|2026-08-23｜生成 Blender 项目中文工作区]] |
 | 2026-08-23 | discussion | 说明网页中鼠标针对水彩图层移动时的交互实现链路。 | archived | watercolor-pointer-interaction-audit | [[日志/2026-08-23-水彩鼠标交互实现审查.md|2026-08-23｜水彩鼠标交互实现审查]] |
+| 2026-08-23 | discussion | 确认原始素材颜色较鲜艳时，网页中树/水彩图层呈现灰淡效果的代码来源。 | archived | watercolor-color-desaturation-render-audit | [[日志/2026-08-23-水彩颜色灰度渲染审查.md|2026-08-23｜水彩颜色灰度渲染审查]] |
+| 2026-08-23 | discussion | 确认子页面“Open the landscape”的鼠标驱动局部流体模拟是否与主页面使用同一份代码。 | archived | fullscreen-landscape-watercolor-interaction-audit | [[日志/2026-08-23-全屏景观水彩交互审查.md|2026-08-23｜全屏景观水彩交互审查]] |
+| 2026-08-23 | feature | - | archived | wlop-nap-fluid-reveal | [[日志/2026-08-23-WlopNap独立流体Reveal实验页.md|WlopNap 独立流体 Reveal 实验页]] |
+| 2026-08-23 | bug | - | archived | wlop-nap-source-dual-texture-fluid-correction | [[日志/2026-08-23-WlopNap源码双纹理流体复刻更正.md|WlopNap 源码双纹理流体复刻更正]] |
+| 2026-08-23 | bug | - | archived | wlop-nap-source-render-chain-fix | [[日志/2026-08-23-WlopNap源版本渲染链修复.md|WlopNap 源版本渲染链修复]] |
 | 2026-08-23 | bug | - | archived | blender-interface-language | [[日志/2026-08-23-Blender界面语言诊断.md|2026-08-23｜Blender 界面语言诊断]] |
 | 2026-08-23 | bug | 修复 Blender 水彩材质黑屏、补齐网页程序化草，并明确禁止构建脚本修改 Blender 用户偏好。 | archived | blender-material-remap-procedural-grass-fix | [[日志/2026-08-23-Blender材质映射与程序化草修复.md|2026-08-23｜Blender 材质映射与程序化草修复]] |
 | 2026-08-23 | bug | - | archived | blender-workspace-names | [[日志/2026-08-23-Blender工作区名称未翻译诊断.md|2026-08-23｜Blender 工作区名称未翻译诊断]] |
