@@ -5,7 +5,7 @@ This directory is an isolated local art workspace for studying and rebuilding th
 ## Delivered structure
 
 - `source_snapshot/`: local-only byte copies of the current runtime assets, fonts, legacy runtime and extracted R3F configuration.
-- `blender/Verminoble_Scene_Mirror_5_0.blend`: local-only Blender 5.0 master file.
+- `blender/Verminoble_Scene_Mirror_5_0.blend`: tracked Blender 5.0 master file; automatic `.blend1/.blend2` backups remain ignored.
 - `manifests/asset_manifest.json`: size, SHA-256, format, purpose and media metadata.
 - `manifests/scene_manifest.json`: GLB structure, camera timing, watercolor UV/SDF rectangles, layer schedule and hotspots.
 - `tools/`: reproducible extraction, conversion, Blender build, validation and render scripts.
@@ -36,6 +36,8 @@ Watercolor opacity is carried by object alpha and read through `OBJECT_ALPHA` in
 
 `PROCEDURAL_GRASS` contains the 23 layers for which the legacy runtime explicitly sets `hasGround: true`. The deterministic Blender mirror contains 3141 editable blade ribbons, the ten source atlas regions, 24 source color-gradient columns, source Poisson-disc spacing and wind/reveal animation channels. `land_back_5`, `background_2` and `viaduc_1` intentionally have no grass because their source configuration disables the ground component. Browser cursor-proximity reveal remains documented as an interaction boundary rather than being visually guessed.
 
+`GROUND_AND_PAPER` and `SHADOW_APPROXIMATION` are artist-only collections. They are visible by default in `ARTIST_EDIT`, where the converted Ground atlas, green grass and 26 editable shadow cards can be inspected together. `WEB_ANIMATION` intentionally excludes these Blender-only presentation approximations and keeps the source-layer mirror boundary. The shadow cards use the source mask, source shadow color/timing metadata and a Principled transparent material; they approximate the legacy WebGL SDF/Shadow Map paper shadow rather than claiming physical-light or pixel-identical behavior.
+
 The build and validation scripts never change or save Blender user preferences. Blender's built-in interface language therefore follows the user's existing installation settings. The generated project explicitly names its saved workspaces in Chinese so they match the Chinese startup UI; asset, object, material and script identifiers remain portable ASCII English. `--factory-startup` in the background commands isolates automated generation only and does not save factory preferences over the user's configuration.
 
 Read [`reports/rendering-boundaries.md`](reports/rendering-boundaries.md) before changing materials. It distinguishes exact source data from renderer-specific approximations.
@@ -60,6 +62,6 @@ To regenerate 20 validation renders (seven animation frames, one artist overview
 ## Isolation and Git policy
 
 - The workbench is outside `src/` and `public/`, so Vite does not serve it.
-- `.gitignore` excludes the copied source assets, `.blend`, generated conversions and render output.
-- Documentation, manifests, scripts and reports are tracked.
+- `.gitignore` excludes the copied source assets, automatic `.blend1/.blend2` backups, generated conversions and render output.
+- Documentation, manifests, scripts, reports and the main `.blend` are tracked.
 - Original assets remain local experimental references and are not cleared for public or commercial redistribution.

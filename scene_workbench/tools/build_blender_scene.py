@@ -7,6 +7,7 @@ import random
 import sys
 import traceback
 import bmesh
+from mathutils import Vector
 from pathlib import Path
 from typing import Any
 
@@ -51,6 +52,10 @@ CUTOUT_AND_GROUND_SECONDS = 0.4
 SHADOW_SECONDS = 1.0
 GRASS_REVEAL_SECONDS = 1.0
 GRASS_RANDOM_SEED = 20260823
+SHADOW_COLOR = (0.714, 0.714, 0.714, 1.0)
+SHADOW_OPACITY = 0.34
+SHADOW_DEPTH_OFFSET = 0.03
+SHADOW_SCALE = 1.06
 GRASS_BLADE_REMAPS = (
     ("blade-1", 0.0078125, 0.0078125, 0.0703125, 0.984375),
     ("blade-7", 0.09375, 0.0078125, 0.0625, 0.953125),
@@ -447,9 +452,16 @@ def create_unlit_image_material(name: str, image: bpy.types.Image, transparent: 
     image_node.image = image
     image_node.interpolation = "Linear"
     image_node.location = (-300, 0)
-    emission = nodes.new("ShaderNodeEmission")
-    emission.location = (120, 60)
-    links.new(image_node.outputs["Color"], emission.inputs["Color"])
+    surface = nodes.new("ShaderNodeBsdfPrincipled")
+    surface.name = "IMAGE_SURFACE"
+    surface.label = "Flat image through Blender 5.0 Principled BSDF"
+    surface.location = (120, 60)
+    surface.inputs["Metallic"].default_value = 0.0
+    surface.inputs["Roughness"].default_value = 1.0
+    surface.inputs["Specular IOR Level"].default_value = 0.0
+    surface.inputs["Emission Strength"].default_value = 1.0
+    links.new(image_node.outputs["Color"], surface.inputs["Base Color"])
+    links.new(image_node.outputs["Color"], surface.inputs["Emission Color"])
     if transparent:
         transparent_node = nodes.new("ShaderNodeBsdfTransparent")
         transparent_node.location = (100, -120)
@@ -457,10 +469,10 @@ def create_unlit_image_material(name: str, image: bpy.types.Image, transparent: 
         mix.location = (330, 0)
         links.new(image_node.outputs["Alpha"], mix.inputs[0])
         links.new(transparent_node.outputs[0], mix.inputs[1])
-        links.new(emission.outputs[0], mix.inputs[2])
+        links.new(surface.outputs[0], mix.inputs[2])
         links.new(mix.outputs[0], output.inputs["Surface"])
     else:
-        links.new(emission.outputs[0], output.inputs["Surface"])
+        links.new(surface.outputs[0], output.inputs["Surface"])
     return material
 
 
@@ -550,12 +562,18 @@ def create_grass_material(
     output.location = (900, 80)
     transparent = nodes.new("ShaderNodeBsdfTransparent")
     transparent.location = (520, -80)
-    emission = nodes.new("ShaderNodeEmission")
-    emission.location = (520, 160)
+    surface = nodes.new("ShaderNodeBsdfPrincipled")
+    surface.name = "GRASS_SURFACE"
+    surface.label = "Grass atlas through Blender 5.0 Principled BSDF"
+    surface.location = (520, 160)
+    surface.inputs["Metallic"].default_value = 0.0
+    surface.inputs["Roughness"].default_value = 1.0
+    surface.inputs["Specular IOR Level"].default_value = 0.0
+    surface.inputs["Emission Strength"].default_value = 1.0
     mix = nodes.new("ShaderNodeMixShader")
     mix.location = (720, 80)
     links.new(transparent.outputs[0], mix.inputs[1])
-    links.new(emission.outputs[0], mix.inputs[2])
+    links.new(surface.outputs[0], mix.inputs[2])
     links.new(mix.outputs[0], output.inputs["Surface"])
 
     texcoord = nodes.new("ShaderNodeTexCoord")
@@ -589,7 +607,8 @@ def create_grass_material(
     gradient.interpolation = "Linear"
     gradient.location = (160, 180)
     links.new(combine.outputs["Vector"], gradient.inputs["Vector"])
-    links.new(gradient.outputs["Color"], emission.inputs["Color"])
+    links.new(gradient.outputs["Color"], surface.inputs["Base Color"])
+    links.new(gradient.outputs["Color"], surface.inputs["Emission Color"])
 
     object_info = nodes.new("ShaderNodeObjectInfo")
     object_info.name = "OBJECT_ALPHA"
@@ -796,6 +815,145 @@ def create_grass_layer(
         obj.animation_data.action.name = f"WEB_GRASS_ANIMATION_{layer.name[5:]}"
         set_action_interpolation(obj, "SINE")
     return obj, len(points)
+
+
+def create_shadow_material(
+    layer_name: str,
+    control: bpy.types.Object,
+    mask: bpy.types.Image,
+    remap: dict[str, float],
+) -> bpy.types.Material:
+    """Create an editable approximation of the legacy WebGL paper shadow."""
+    material = bpy.data.materials.new(f"SHADOW_{layer_name}")
+    material.use_nodes = True
+    if hasattr(material, "preview_render_type"):
+        material.preview_render_type = "FLAT"
+    configure_transparency(material)
+    material.diffuse_color = SHADOW_COLOR
+    material["source_shadow_color"] = "#b6b6b6"
+    material["source_shadow_size"] = 0.5
+    material["source_cutout_shadow_intensity"] = 0.4
+    material["source_paper_shadow_intensity"] = 1.7
+    material["approximation"] = (
+        "Mask-driven flattened shadow card; source WebGL SDF/Shadow Map/noise are preserved as metadata."
+    )
+    material["atlas_remap"] = json.dumps(remap, sort_keys=True)
+
+    nodes = material.node_tree.nodes
+    links = material.node_tree.links
+    nodes.clear()
+
+    output = nodes.new("ShaderNodeOutputMaterial")
+    output.location = (940, 80)
+    transparent = nodes.new("ShaderNodeBsdfTransparent")
+    transparent.location = (540, -80)
+    surface = nodes.new("ShaderNodeBsdfPrincipled")
+    surface.name = "SHADOW_SURFACE"
+    surface.label = "Editable watercolor layer shadow"
+    surface.location = (540, 160)
+    surface.inputs["Base Color"].default_value = SHADOW_COLOR
+    surface.inputs["Metallic"].default_value = 0.0
+    surface.inputs["Roughness"].default_value = 1.0
+    surface.inputs["Specular IOR Level"].default_value = 0.0
+    surface.inputs["Emission Color"].default_value = SHADOW_COLOR
+    surface.inputs["Emission Strength"].default_value = 0.7
+    mix = nodes.new("ShaderNodeMixShader")
+    mix.location = (760, 80)
+    links.new(transparent.outputs[0], mix.inputs[1])
+    links.new(surface.outputs[0], mix.inputs[2])
+    links.new(mix.outputs[0], output.inputs["Surface"])
+
+    texcoord = nodes.new("ShaderNodeTexCoord")
+    texcoord.location = (-900, 180)
+    atlas_uv = add_vector_remap(nodes, links, texcoord, remap, -700, 220, "SHADOW_ATLAS")
+    mask_node = nodes.new("ShaderNodeTexImage")
+    mask_node.name = "SOURCE_SHADOW_MASK"
+    mask_node.label = "Source watercolor mask for shadow silhouette"
+    mask_node.image = mask
+    mask_node.extension = "CLIP"
+    mask_node.interpolation = "Linear"
+    mask_node.location = (-300, 220)
+    links.new(atlas_uv.outputs["Vector"], mask_node.inputs["Vector"])
+
+    mask_value = nodes.new("ShaderNodeRGBToBW")
+    mask_value.name = "SHADOW_MASK_VALUE"
+    mask_value.location = (-80, 220)
+    links.new(mask_node.outputs["Color"], mask_value.inputs["Color"])
+    soften = nodes.new("ShaderNodeValToRGB")
+    soften.name = "SHADOW_EDGE_SOFTEN"
+    soften.label = "Softened watercolor shadow edge"
+    soften.location = (120, 220)
+    soften.color_ramp.elements[0].position = 0.22
+    soften.color_ramp.elements[1].position = 0.78
+    links.new(mask_value.outputs["Val"], soften.inputs["Fac"])
+
+    runtime_alpha = nodes.new("ShaderNodeValue")
+    runtime_alpha.name = "WEB_SHADOW_ALPHA"
+    runtime_alpha.label = "Driven by source layer web_shadow_alpha"
+    runtime_alpha.location = (-80, -40)
+    driver = runtime_alpha.outputs[0].driver_add("default_value").driver
+    variable = driver.variables.new()
+    variable.name = "shadow_alpha"
+    variable.type = "SINGLE_PROP"
+    variable.targets[0].id = control
+    variable.targets[0].data_path = '["web_shadow_alpha"]'
+    driver.expression = "shadow_alpha"
+
+    alpha_runtime = nodes.new("ShaderNodeMath")
+    alpha_runtime.name = "MASK_X_RUNTIME_SHADOW"
+    alpha_runtime.operation = "MULTIPLY"
+    alpha_runtime.location = (320, 80)
+    links.new(soften.outputs["Color"], alpha_runtime.inputs[0])
+    links.new(runtime_alpha.outputs[0], alpha_runtime.inputs[1])
+    alpha_opacity = nodes.new("ShaderNodeMath")
+    alpha_opacity.name = "SHADOW_OPACITY"
+    alpha_opacity.operation = "MULTIPLY"
+    alpha_opacity.location = (520, -20)
+    alpha_opacity.inputs[1].default_value = SHADOW_OPACITY
+    links.new(alpha_runtime.outputs[0], alpha_opacity.inputs[0])
+    links.new(alpha_opacity.outputs[0], mix.inputs[0])
+    return material
+
+
+def create_shadow_layer(
+    collection: bpy.types.Collection,
+    layer: bpy.types.Object,
+    mask: bpy.types.Image,
+    remap: dict[str, float],
+) -> bpy.types.Object:
+    """Create a parallel shadow card with a source-depth offset."""
+    source_matrix = authored_world_matrix(layer)
+    local_vertices = [Vector(vertex.co) for vertex in layer.data.vertices]
+    if not local_vertices:
+        raise RuntimeError(f"Cannot create shadow for empty layer: {layer.name}")
+    center = sum(local_vertices, Vector()) / len(local_vertices)
+    normal = source_matrix.to_3x3() @ Vector((1.0, 0.0, 0.0))
+    normal.normalize()
+    shadow_vertices = [
+        tuple(source_matrix @ (center + (vertex - center) * SHADOW_SCALE) + normal * SHADOW_DEPTH_OFFSET)
+        for vertex in local_vertices
+    ]
+    faces = [tuple(polygon.vertices) for polygon in layer.data.polygons]
+    mesh = bpy.data.meshes.new(f"SHADOW_{layer.name[5:]}_Mesh")
+    mesh.from_pydata(shadow_vertices, [], faces)
+    mesh.update()
+    source_uv = layer.data.uv_layers.active
+    if source_uv is not None:
+        uv_layer = mesh.uv_layers.new(name="ShadowAtlasUV")
+        for target, source in zip(uv_layer.data, source_uv.data, strict=True):
+            target.uv = source.uv
+
+    shadow = bpy.data.objects.new(f"SHADOW_{layer.name[5:]}", mesh)
+    collection.objects.link(shadow)
+    shadow.hide_select = False
+    material = create_shadow_material(layer.name[5:], layer, mask, remap)
+    mesh.materials.append(material)
+    shadow["source_layer"] = layer.name[5:]
+    shadow["source_generation"] = "editable approximation of legacy WebGL paper shadow"
+    shadow["source_shadow_depth"] = SHADOW_DEPTH_OFFSET
+    shadow["source_shadow_noise"] = 0.005
+    shadow["source_shadow_projection"] = "parallel layer shadow card with source-depth offset"
+    return shadow
 
 
 def create_reference_empty(collection: bpy.types.Collection, name: str, properties: dict[str, Any]) -> bpy.types.Object:
@@ -1084,20 +1242,27 @@ def build_web_master(
     mask = load_image(ASSETS / "textures/atlas/texture_mask.jpg", "Non-Color")
     sdf = load_image(ASSETS / "textures/atlas/sdf.png", "Non-Color")
     ground_atlas = load_image(GENERATED / "converted/ground_atlas.png", "sRGB")
-    grass_atlas = load_image(ASSETS / "textures/grass/atlas.png", "Non-Color")
+    grass_atlas = load_image(ASSETS / "textures/grass/atlas.png", "sRGB")
     grass_gradients = load_image(ASSETS / "textures/grass/color-gradients.jpg", "sRGB")
     grass_reference = load_image(ASSETS / "textures/grassTest.png", "Non-Color")
     grass_noise = load_image(ASSETS / "textures/noise.jpeg", "Non-Color")
 
     editable = new_collection(animation_scene, "EDITABLE_WATERCOLOR")
-    ground_collection = new_collection(animation_scene, "GROUND_AND_PAPER")
+    # Ground and the Blender-only shadow approximation are intentionally linked
+    # only into ARTIST_EDIT. WEB_ANIMATION remains the source-layer mirror.
+    ground_collection = new_collection(artist_scene, "GROUND_AND_PAPER")
+    shadow_collection = new_collection(artist_scene, "SHADOW_APPROXIMATION")
     grass_collection = new_collection(animation_scene, "PROCEDURAL_GRASS")
-    ground_collection.hide_render = True
-    ground_collection.hide_viewport = True
-    ground_collection["default_render_state"] = "disabled"
+    ground_collection.hide_render = False
+    ground_collection.hide_viewport = False
+    ground_collection["default_render_state"] = "enabled in ARTIST_EDIT only"
     ground_collection["reason"] = (
-        "The source WebGL runtime hides the GLB Ground mesh and rebuilds it through a custom shader; "
-        "toggle this collection manually for reference editing."
+        "The source WebGL runtime rebuilds Ground through a custom shader; this editable atlas mirror "
+        "is enabled in ARTIST_EDIT and excluded from WEB_ANIMATION."
+    )
+    shadow_collection["default_render_state"] = "enabled in ARTIST_EDIT only"
+    shadow_collection["reason"] = (
+        "Editable approximation of the source WebGL SDF paper-shadow component; not a physical light shadow."
     )
     hotspots = new_collection(animation_scene, "HOTSPOTS_AND_TITLES")
     camera_collection = new_collection(animation_scene, "CAMERA_RIG")
@@ -1112,6 +1277,7 @@ def build_web_master(
     editable_meshes: list[str] = []
     layer_animations: list[dict[str, Any]] = []
     grass_objects: list[str] = []
+    shadow_objects: list[str] = []
     grass_blade_count = 0
     schedule_occurrences: dict[float, int] = {}
     grass_material = create_grass_material(
@@ -1169,6 +1335,8 @@ def build_web_master(
         if grass_object is not None:
             grass_objects.append(grass_object.name)
             grass_blade_count += layer_grass_blades
+        shadow = create_shadow_layer(shadow_collection, duplicate, mask, remap)
+        shadow_objects.append(shadow.name)
 
     original_ground = source_by_name.get("Ground")
     if original_ground is None:
@@ -1264,7 +1432,6 @@ def build_web_master(
 
     shared_collections = (
         editable,
-        ground_collection,
         grass_collection,
         hotspots,
         camera_collection,
@@ -1308,6 +1475,9 @@ def build_web_master(
         "procedural_grass_objects": len(grass_objects),
         "procedural_grass_blades": grass_blade_count,
         "procedural_grass_names": grass_objects,
+        "shadow_objects": len(shadow_objects),
+        "shadow_names": shadow_objects,
+        "artist_only_collections": [ground_collection.name, shadow_collection.name],
         "watercolor_animation_actions": [item["action"] for item in layer_animations],
         "watercolor_animation_end_frame": max(item["end_frame"] for item in layer_animations),
         "removed_source_degenerate_faces": sum(

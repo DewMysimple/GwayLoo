@@ -22,6 +22,8 @@
 - The imported `land_back_5` contains one zero-area triangle. Only that invalid face is removed from the editable copy; all remaining faces stay triangulated and validation rejects N-Gons or further zero-area faces.
 - Reveal opacity is mirrored onto object alpha and consumed by the material's `OBJECT_ALPHA` node. This keeps material previews opaque outside object context without changing animation renders.
 - The legacy runtime creates grass procedurally rather than storing it in the GLB. Blender mirrors the 23 source-enabled ground layers with deterministic Poisson-disc clusters, 3141 editable triangle-ribbon blades, ten source blade atlas regions, 24 color-gradient columns, and wind/reveal channels. Layers with `hasGround: false` remain grass-free.
+- `ARTIST_EDIT` enables the converted Ground atlas and 26 editable `SHADOW_*` cards. `WEB_ANIMATION` intentionally excludes both artist-only collections so source animation remains distinguishable from Blender presentation approximations.
+- The Blender shadow cards use the source mask and `web_shadow_alpha` timing with a gray Principled transparent material. They approximate the legacy WebGL paper-shadow component, whose exact implementation uses SDF distance fields, screen-space shadow maps, noise and custom GLSL.
 - Ground KTX2 is losslessly transcoded to an RGBA8 PNG for Blender while the KTX2 remains preserved.
 - Landscape `OVER_VIDEO` opacity is controlled by `OVER_MIX_CONTROL["mix"]`; it defaults to zero and no unverified transition timing is added.
 - Canela WOFF is converted to a local TTF only for editable title annotations. Runtime MSDF title geometry remains the authoritative source.
@@ -32,7 +34,7 @@
 - The runtime generates ink reveal points with `Math.random()` at load time. Blender preserves the reveal duration and source parameters, but a deterministic `.blend` cannot claim the same random ink field unless a particular browser run is captured first.
 - Grass placement in the browser also uses `Math.random()` and reacts to cursor proximity. Blender uses a recorded deterministic seed so the workbench can be rebuilt exactly; it mirrors the source generator and authored resource mapping, not the random outcome of an uncaptured browser session.
 - SDF, paper, noise and LUT inputs are preserved and labeled in the Blender file, but no visually guessed substitute is wired into the final shader.
-- The GLB `Ground` mesh is preserved in `GROUND_AND_PAPER` and disabled for master rendering by default because the source runtime hides it and uses a custom ground pipeline.
+- The GLB `Ground` mesh is preserved in `GROUND_AND_PAPER` and enabled only in `ARTIST_EDIT` through a converted atlas material. The source runtime hides the GLB object and rebuilds Ground through a custom shader, so the Blender version remains an editable approximation.
 - Blender title objects are non-rendering annotations because the website uses MSDF canvas text rather than ordinary 3D text.
 - Browser DOM, FAQ, subscription text and other page-tail UI are outside the three-dimensional workbench.
 

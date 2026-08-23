@@ -13,7 +13,6 @@ REPORT = WORKBENCH / "reports/blender-validation.json"
 MANIFEST = WORKBENCH / "manifests/scene_manifest.json"
 REQUIRED_SHARED_COLLECTIONS = {
     "EDITABLE_WATERCOLOR",
-    "GROUND_AND_PAPER",
     "PROCEDURAL_GRASS",
     "HOTSPOTS_AND_TITLES",
     "CAMERA_RIG",
@@ -405,6 +404,70 @@ def main() -> None:
             f"got {grass_wind_actions}/{grass_reveal_actions}",
             failures,
         )
+    grass_material = bpy.data.materials.get("WC_PROCEDURAL_GRASS")
+    if grass_material is None:
+        fail("WC_PROCEDURAL_GRASS material is missing", failures)
+    else:
+        grass_surface = grass_material.node_tree.nodes.get("GRASS_SURFACE")
+        if grass_surface is None or grass_surface.type != "BSDF_PRINCIPLED":
+            fail("WC_PROCEDURAL_GRASS must use a Blender 5.0 Principled surface", failures)
+        if any(node.type == "EMISSION" for node in grass_material.node_tree.nodes):
+            fail("WC_PROCEDURAL_GRASS must not use the legacy standalone Emission node", failures)
+
+    ground_collection = bpy.data.collections.get("GROUND_AND_PAPER")
+    shadow_collection = bpy.data.collections.get("SHADOW_APPROXIMATION")
+    artist_collection_names = {collection.name for collection in artist_scene.collection.children} if artist_scene else set()
+    animation_collection_names = {
+        collection.name for collection in animation_scene.collection.children
+    } if animation_scene else set()
+    if "GROUND_AND_PAPER" not in artist_collection_names:
+        fail("ARTIST_EDIT must link GROUND_AND_PAPER", failures)
+    if "GROUND_AND_PAPER" in animation_collection_names:
+        fail("WEB_ANIMATION must not link the artist-only GROUND_AND_PAPER collection", failures)
+    if "SHADOW_APPROXIMATION" not in artist_collection_names:
+        fail("ARTIST_EDIT must link SHADOW_APPROXIMATION", failures)
+    if "SHADOW_APPROXIMATION" in animation_collection_names:
+        fail("WEB_ANIMATION must not link the artist-only SHADOW_APPROXIMATION collection", failures)
+
+    ground_objects = [obj for obj in ground_collection.objects if obj.type == "MESH"] if ground_collection else []
+    if len(ground_objects) != 1 or ground_objects[0].name != "EDIT_Ground":
+        fail(f"Expected one editable artist Ground mesh, got {[obj.name for obj in ground_objects]}", failures)
+    ground_material = bpy.data.materials.get("WC_Ground_Atlas")
+    if ground_material is None:
+        fail("WC_Ground_Atlas material is missing", failures)
+    else:
+        ground_surface = ground_material.node_tree.nodes.get("IMAGE_SURFACE")
+        if ground_surface is None or ground_surface.type != "BSDF_PRINCIPLED":
+            fail("WC_Ground_Atlas must use a Blender 5.0 Principled surface", failures)
+        if any(node.type == "EMISSION" for node in ground_material.node_tree.nodes):
+            fail("WC_Ground_Atlas must not use the legacy standalone Emission node", failures)
+
+    shadow_objects = [obj for obj in shadow_collection.objects if obj.type == "MESH"] if shadow_collection else []
+    expected_shadow_names = {f"SHADOW_{layer_name}" for layer_name in expected_texture_remaps}
+    actual_shadow_names = {obj.name for obj in shadow_objects}
+    if actual_shadow_names != expected_shadow_names:
+        fail(
+            "Shadow layer set does not match watercolor layers: "
+            f"missing={sorted(expected_shadow_names - actual_shadow_names)}, "
+            f"unexpected={sorted(actual_shadow_names - expected_shadow_names)}",
+            failures,
+        )
+    for obj in shadow_objects:
+        if obj.hide_select:
+            fail(f"{obj.name} must remain artist-selectable", failures)
+        if obj.get("source_generation") != "editable approximation of legacy WebGL paper shadow":
+            fail(f"{obj.name} is missing shadow-generation metadata", failures)
+        if len(obj.data.materials) != 1:
+            fail(f"{obj.name} must use exactly one shadow material", failures)
+        else:
+            material = obj.data.materials[0]
+            surface = material.node_tree.nodes.get("SHADOW_SURFACE")
+            if surface is None or surface.type != "BSDF_PRINCIPLED":
+                fail(f"{material.name} must use a Principled shadow surface", failures)
+            if any(node.type == "EMISSION" for node in material.node_tree.nodes):
+                fail(f"{material.name} must not use a standalone Emission node", failures)
+            if material.node_tree.nodes.get("WEB_SHADOW_ALPHA") is None:
+                fail(f"{material.name} is missing the web_shadow_alpha driver", failures)
 
     edit_mode_roundtrip = False
     if artist_scene and editable_meshes:
@@ -480,6 +543,9 @@ def main() -> None:
         "procedural_grass_triangles": grass_triangles,
         "procedural_grass_wind_actions": grass_wind_actions,
         "procedural_grass_reveal_actions": grass_reveal_actions,
+        "shadow_objects": len(shadow_objects),
+        "artist_only_ground": "GROUND_AND_PAPER" in artist_collection_names and "GROUND_AND_PAPER" not in animation_collection_names,
+        "artist_only_shadows": "SHADOW_APPROXIMATION" in artist_collection_names and "SHADOW_APPROXIMATION" not in animation_collection_names,
         "edit_mode_roundtrip": edit_mode_roundtrip,
         "default_scene": saved_default_scene,
         "camera_rig": camera_rig.name if camera_rig else None,
