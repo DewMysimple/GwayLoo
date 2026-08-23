@@ -16,6 +16,7 @@ supersedes: null
 | 时间 | 类型 | 目标 | 状态 | 主题 | 日志 |
 | --- | --- | --- | --- | --- | --- |
 | 2026-08-23 | feature | - | archived | blender-chinese-workspaces | [[日志/2026-08-23-生成Blender项目中文工作区.md|2026-08-23｜生成 Blender 项目中文工作区]] |
+| 2026-08-23 | bug | 撤回 Blender 中不符合源网站结构的竖直阴影卡片，恢复只包含源内容的可编辑场景。 | archived | blender-shadow-approximation-removal | [[日志/2026-08-23-Blender误加阴影近似撤回与源阴影边界确认.md|2026-08-23｜Blender 误加阴影近似撤回与源阴影边界确认]] |
 | 2026-08-23 | bug | - | archived | blender-interface-language | [[日志/2026-08-23-Blender界面语言诊断.md|2026-08-23｜Blender 界面语言诊断]] |
 | 2026-08-23 | bug | 修复 Blender 水彩材质黑屏、补齐网页程序化草，并明确禁止构建脚本修改 Blender 用户偏好。 | archived | blender-material-remap-procedural-grass-fix | [[日志/2026-08-23-Blender材质映射与程序化草修复.md|2026-08-23｜Blender 材质映射与程序化草修复]] |
 | 2026-08-23 | bug | - | archived | blender-workspace-names | [[日志/2026-08-23-Blender工作区名称未翻译诊断.md|2026-08-23｜Blender 工作区名称未翻译诊断]] |

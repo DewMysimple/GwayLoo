@@ -39,47 +39,13 @@
       "GRASS_sheep_6",
       "GRASS_sheep_7"
     ],
-    "shadow_objects": 26,
-    "shadow_names": [
-      "SHADOW_tree_1",
-      "SHADOW_land_front_3",
-      "SHADOW_background_2",
-      "SHADOW_walker_1",
-      "SHADOW_land_back_1",
-      "SHADOW_land_back_3",
-      "SHADOW_land_back_2",
-      "SHADOW_cow_2",
-      "SHADOW_land_back_4",
-      "SHADOW_land_front_5",
-      "SHADOW_land_front_1",
-      "SHADOW_cow_3",
-      "SHADOW_land_front_7",
-      "SHADOW_viaduc_1",
-      "SHADOW_land_back_5",
-      "SHADOW_land_front_6",
-      "SHADOW_cow_1",
-      "SHADOW_sheep_3",
-      "SHADOW_sheep_4",
-      "SHADOW_land_front_4",
-      "SHADOW_sheep_1",
-      "SHADOW_sheep_2",
-      "SHADOW_land_front_2",
-      "SHADOW_sheep_5",
-      "SHADOW_sheep_6",
-      "SHADOW_sheep_7"
-    ],
-    "shadow_render_method": "BLENDED",
-    "shadow_opacity": 0.2,
-    "shadow_scale": 1.02,
-    "shadow_depth_offset": 0.01,
     "artist_world_color": [
       0.78,
       0.78,
       0.74
     ],
     "artist_only_collections": [
-      "GROUND_AND_PAPER",
-      "SHADOW_APPROXIMATION"
+      "GROUND_AND_PAPER"
     ],
     "watercolor_animation_actions": [
       "WEB_REVEAL_tree_1",
@@ -127,8 +93,7 @@
     "GROUND_AND_PAPER",
     "HOTSPOTS_AND_TITLES",
     "PROCEDURAL_GRASS",
-    "REFERENCE_ONLY",
-    "SHADOW_APPROXIMATION"
+    "REFERENCE_ONLY"
   ],
   "source_collections": [
     "SOURCE_GLTF_MIRROR"

@@ -129,42 +129,6 @@ def build_grass_preview_scene() -> bpy.types.Scene:
     return scene
 
 
-def build_shadow_preview_scene() -> bpy.types.Scene:
-    scene = bpy.data.scenes.new("VALIDATION_SHADOW_PREVIEW")
-    available_engines = {item.identifier for item in scene.render.bl_rna.properties["engine"].enum_items}
-    scene.render.engine = "BLENDER_EEVEE_NEXT" if "BLENDER_EEVEE_NEXT" in available_engines else "BLENDER_EEVEE"
-    scene.render.film_transparent = False
-    scene.world = bpy.data.worlds.new("VALIDATION_SHADOW_PREVIEW_World")
-    set_world_color(scene.world, (0.78, 0.78, 0.74))
-    tree_source = bpy.data.objects["EDIT_tree_1"]
-    shadow_source = bpy.data.objects["SHADOW_tree_1"]
-    tree = tree_source.copy()
-    tree.name = "VALIDATION_SHADOW_TREE"
-    tree.animation_data_clear()
-    tree.color = (1.0, 1.0, 1.0, 1.0)
-    shadow = shadow_source.copy()
-    shadow.name = "VALIDATION_SHADOW_CARD"
-    shadow.animation_data_clear()
-    shadow.color = (1.0, 1.0, 1.0, 1.0)
-    scene.collection.objects.link(tree)
-    scene.collection.objects.link(shadow)
-    tree_source["web_shadow_alpha"] = 1.0
-
-    corners = [tree.matrix_world @ Vector(corner) for corner in tree.bound_box]
-    center = sum(corners, Vector()) / len(corners)
-    normal = (tree.matrix_world.to_3x3() @ tree.data.polygons[0].normal).normalized()
-    camera_data = bpy.data.cameras.new("VALIDATION_SHADOW_PREVIEW_CameraData")
-    camera_data.type = "ORTHO"
-    camera_data.ortho_scale = 10.0
-    camera = bpy.data.objects.new("VALIDATION_SHADOW_PREVIEW_Camera", camera_data)
-    camera_location = center + normal * 30.0 + Vector((0.0, 0.0, -1.0))
-    camera_rotation = (center - camera_location).to_track_quat("-Z", "Y")
-    camera.matrix_world = Matrix.Translation(camera_location) @ camera_rotation.to_matrix().to_4x4()
-    scene.collection.objects.link(camera)
-    scene.camera = camera
-    return scene
-
-
 def build_background_preview_scene() -> bpy.types.Scene:
     scene = bpy.data.scenes.new("VALIDATION_BACKGROUND_PREVIEW")
     available_engines = {item.identifier for item in scene.render.bl_rna.properties["engine"].enum_items}
@@ -200,7 +164,6 @@ def main() -> None:
     # state of data blocks shared by ARTIST_EDIT and WEB_ANIMATION.
     material_preview = build_material_preview_scene()
     grass_preview = build_grass_preview_scene()
-    shadow_preview = build_shadow_preview_scene()
     background_preview = build_background_preview_scene()
     web = bpy.data.scenes["WEB_ANIMATION"]
     # Include the first paper's exact runtime phases: immediate alpha, paper
@@ -211,9 +174,10 @@ def main() -> None:
 
     artist = bpy.data.scenes["ARTIST_EDIT"]
     rendered.append(render(artist, 3586, 960, 540, "artist-edit-materials.png"))
+    for frame in (71, 73, 181, 424):
+        rendered.append(render(artist, frame, 960, 540, f"artist-edit-frame-{frame:04d}.png"))
     rendered.append(render(material_preview, 0, 512, 512, "material-preview-tree.png"))
     rendered.append(render(grass_preview, 3586, 720, 720, "grass-preview-tree.png"))
-    rendered.append(render(shadow_preview, 3586, 720, 720, "shadow-preview-tree.png"))
     rendered.append(render(background_preview, 3586, 960, 540, "background-preview-card.png"))
 
     source = bpy.data.scenes["SOURCE_REFERENCE"]
