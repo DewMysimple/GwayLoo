@@ -25,6 +25,58 @@ def set_world_color(world: bpy.types.World, color: tuple[float, float, float]) -
         background.inputs["Strength"].default_value = 0.8
 
 
+def create_unlit_validation_material(name: str, color: tuple[float, float, float, float]) -> bpy.types.Material:
+    material = bpy.data.materials.new(name)
+    material.use_nodes = True
+    nodes = material.node_tree.nodes
+    links = material.node_tree.links
+    nodes.clear()
+    output = nodes.new("ShaderNodeOutputMaterial")
+    surface = nodes.new("ShaderNodeBsdfPrincipled")
+    surface.inputs["Base Color"].default_value = (0.0, 0.0, 0.0, 1.0)
+    surface.inputs["Roughness"].default_value = 1.0
+    surface.inputs["Specular IOR Level"].default_value = 0.0
+    surface.inputs["Emission Color"].default_value = color
+    surface.inputs["Emission Strength"].default_value = 1.0
+    links.new(surface.outputs[0], output.inputs["Surface"])
+    return material
+
+
+def add_alpha_visibility_backplate(
+    scene: bpy.types.Scene,
+    center: Vector,
+    camera: bpy.types.Object,
+    name: str,
+) -> bpy.types.Object:
+    """Place an opaque cyan plate behind a card to expose alpha depth failures."""
+    camera_basis = camera.matrix_world.to_3x3()
+    right = (camera_basis @ Vector((1.0, 0.0, 0.0))).normalized()
+    up = (camera_basis @ Vector((0.0, 1.0, 0.0))).normalized()
+    view_direction = (center - camera.matrix_world.translation).normalized()
+    # Keep the plate behind the card's full projected depth at oblique angles;
+    # placing it close to the origin would incorrectly cut off the far half.
+    plate_center = center + view_direction * 15.0
+    half_width = 8.5
+    half_height = 8.5
+    mesh = bpy.data.meshes.new(f"{name}_Mesh")
+    mesh.from_pydata(
+        [
+            plate_center - right * half_width - up * half_height,
+            plate_center + right * half_width - up * half_height,
+            plate_center + right * half_width + up * half_height,
+            plate_center - right * half_width + up * half_height,
+        ],
+        [],
+        [(0, 1, 2), (0, 2, 3)],
+    )
+    plate = bpy.data.objects.new(name, mesh)
+    plate.data.materials.append(
+        create_unlit_validation_material(f"{name}_Material", (0.02, 0.32, 0.42, 1.0))
+    )
+    scene.collection.objects.link(plate)
+    return plate
+
+
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest().upper()
 
@@ -186,13 +238,14 @@ def build_material_angle_preview_scenes() -> list[bpy.types.Scene]:
 
         camera_data = bpy.data.cameras.new(f"VALIDATION_MATERIAL_ANGLE_{name}_CameraData")
         camera_data.type = "ORTHO"
-        camera_data.ortho_scale = 2.2
+        camera_data.ortho_scale = 14.0
         camera = bpy.data.objects.new(f"VALIDATION_MATERIAL_ANGLE_{name}_Camera", camera_data)
         camera_location = center + offset
         camera_rotation = (center - camera_location).to_track_quat("-Z", "Y")
         camera.matrix_world = Matrix.Translation(camera_location) @ camera_rotation.to_matrix().to_4x4()
         scene.collection.objects.link(camera)
         scene.camera = camera
+        add_alpha_visibility_backplate(scene, center, camera, f"VALIDATION_ALPHA_BACKPLATE_{name.upper()}")
         scenes.append(scene)
     return scenes
 

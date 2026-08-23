@@ -76,7 +76,9 @@
       "WEB_REVEAL_sheep_7"
     ],
     "watercolor_animation_end_frame": 3330.0,
-    "removed_source_degenerate_faces": 1
+    "removed_source_degenerate_faces": 2,
+    "merged_source_duplicate_vertices": 66,
+    "reversed_source_faces": 3
   },
   "default_scene": "ARTIST_EDIT",
   "default_selected_object": "EDIT_tree_1",

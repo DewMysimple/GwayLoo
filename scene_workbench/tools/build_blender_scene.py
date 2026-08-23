@@ -249,24 +249,58 @@ def authored_world_matrix(obj: bpy.types.Object) -> Any:
     return authored_world_matrix(obj.parent) @ local
 
 
-def remove_zero_area_triangles(mesh: bpy.types.Mesh, epsilon: float = 1e-12) -> int:
-    """Remove source-degenerate faces without changing valid authored triangles."""
+def optimize_watercolor_card_mesh(mesh: bpy.types.Mesh) -> dict[str, float | int]:
+    """Clean GLB float noise while preserving the authored 2D silhouette and UVs."""
+    original_normal_x = sum(polygon.normal.x for polygon in mesh.polygons)
     working = bmesh.new()
     working.from_mesh(mesh)
-    degenerate_faces = [face for face in working.faces if face.calc_area() <= epsilon]
-    removed = len(degenerate_faces)
+
+    plane_x = sum(vertex.co.x for vertex in working.verts) / max(1, len(working.verts))
+    source_plane_span = (
+        max(vertex.co.x for vertex in working.verts) - min(vertex.co.x for vertex in working.verts)
+        if working.verts
+        else 0.0
+    )
+    for vertex in working.verts:
+        vertex.co.x = plane_x
+
+    vertex_count_before = len(working.verts)
+    bmesh.ops.remove_doubles(working, verts=list(working.verts), dist=1e-6)
+    merged_vertices = vertex_count_before - len(working.verts)
+
+    planar_extent = max(
+        max(vertex.co.y for vertex in working.verts) - min(vertex.co.y for vertex in working.verts),
+        max(vertex.co.z for vertex in working.verts) - min(vertex.co.z for vertex in working.verts),
+    ) if working.verts else 0.0
+    area_epsilon = max(1e-12, planar_extent * planar_extent * 1e-10)
+    degenerate_faces = [face for face in working.faces if face.calc_area() <= area_epsilon]
+    removed_faces = len(degenerate_faces)
     if degenerate_faces:
         bmesh.ops.delete(working, geom=degenerate_faces, context="FACES_ONLY")
-        loose_edges = [edge for edge in working.edges if not edge.link_faces]
-        if loose_edges:
-            bmesh.ops.delete(working, geom=loose_edges, context="EDGES")
-        loose_vertices = [vertex for vertex in working.verts if not vertex.link_edges]
-        if loose_vertices:
-            bmesh.ops.delete(working, geom=loose_vertices, context="VERTS")
-        working.to_mesh(mesh)
-        mesh.update()
+    loose_edges = [edge for edge in working.edges if not edge.link_faces]
+    if loose_edges:
+        bmesh.ops.delete(working, geom=loose_edges, context="EDGES")
+    loose_vertices = [vertex for vertex in working.verts if not vertex.link_edges]
+    if loose_vertices:
+        bmesh.ops.delete(working, geom=loose_vertices, context="VERTS")
+
+    desired_normal_sign = -1.0 if original_normal_x < 0.0 else 1.0
+    for face in working.faces:
+        face.normal_update()
+    reversed_faces = [face for face in working.faces if face.normal.x * desired_normal_sign < 0.0]
+    if reversed_faces:
+        bmesh.ops.reverse_faces(working, faces=reversed_faces)
+
+    working.normal_update()
+    working.to_mesh(mesh)
+    mesh.update()
     working.free()
-    return removed
+    return {
+        "flattened_plane_span": source_plane_span,
+        "merged_vertices": merged_vertices,
+        "removed_degenerate_faces": removed_faces,
+        "reversed_faces": len(reversed_faces),
+    }
 
 
 def load_image(path: Path, color_space: str = "sRGB") -> bpy.types.Image:
@@ -280,14 +314,20 @@ def load_image(path: Path, color_space: str = "sRGB") -> bpy.types.Image:
     return image
 
 
-def configure_transparency(material: bpy.types.Material, render_method: str = "DITHERED") -> None:
+def configure_transparency(
+    material: bpy.types.Material,
+    render_method: str = "DITHERED",
+    transparency_overlap: bool = True,
+) -> None:
     if hasattr(material, "surface_render_method"):
         available = {item.identifier for item in material.bl_rna.properties["surface_render_method"].enum_items}
         material.surface_render_method = render_method if render_method in available else "DITHERED"
     elif hasattr(material, "blend_method"):
         material.blend_method = "BLEND"
         material.shadow_method = "NONE"
-    material.use_transparency_overlap = False
+    # DITHERED does not depend on object/triangle blend order. Keep overlap
+    # enabled so alpha holes can reveal other cutout surfaces behind the card.
+    material.use_transparency_overlap = transparency_overlap
 
 
 def add_vector_remap(
@@ -354,7 +394,7 @@ def create_watercolor_material(
     material.use_nodes = True
     if hasattr(material, "preview_render_type"):
         material.preview_render_type = "FLAT"
-    configure_transparency(material, "BLENDED")
+    configure_transparency(material, "DITHERED")
     material.diffuse_color = (1.0, 1.0, 1.0, 1.0)
     material["source_layer"] = layer_name
     material["atlas_remap"] = json.dumps(remap, sort_keys=True)
@@ -362,7 +402,8 @@ def create_watercolor_material(
     material["mask_edge_clip"] = "ColorRamp 0.02 -> 0.18; atlas padding is transparent"
     material["view_angle_policy"] = (
         "Double-sided 2D card; watercolor color is emitted through Principled BSDF "
-        "to avoid view-angle diffuse-light changes; Principled Alpha drives smooth blended transparency."
+        "to avoid view-angle diffuse-light changes; Principled Alpha uses dithered cutout transparency "
+        "so atlas holes reveal the ground from front, grazing, and back views."
     )
     material["source_reveal_durations_seconds"] = json.dumps(
         {
@@ -393,9 +434,9 @@ def create_watercolor_material(
     surface.inputs["Specular IOR Level"].default_value = 0.0
     surface.inputs["Emission Strength"].default_value = 1.0
     # Feed alpha directly into Principled instead of mixing a Transparent BSDF
-    # with the surface.  A BLENDED material made from several coplanar mesh
-    # triangles can otherwise be depth-sorted differently at grazing/back
-    # angles, exposing the card's unpainted region as a gray or black slab.
+    # with the surface. DITHERED visibility resolves each sample without the
+    # per-object sorting used by BLENDED, so black mask regions do not hide a
+    # ground or another cutout card behind this triangulated 2D surface.
     links.new(surface.outputs[0], output.inputs["Surface"])
 
     texcoord = nodes.new("ShaderNodeTexCoord")
@@ -503,7 +544,7 @@ def create_unlit_image_material(
     material = bpy.data.materials.new(name)
     material.use_nodes = True
     if transparent:
-        configure_transparency(material, "BLENDED")
+        configure_transparency(material, "DITHERED")
     nodes = material.node_tree.nodes
     links = material.node_tree.links
     nodes.clear()
@@ -524,10 +565,6 @@ def create_unlit_image_material(
     links.new(image_node.outputs["Color"], surface.inputs["Base Color"])
     links.new(image_node.outputs["Color"], surface.inputs["Emission Color"])
     if transparent:
-        transparent_node = nodes.new("ShaderNodeBsdfTransparent")
-        transparent_node.location = (100, -120)
-        mix = nodes.new("ShaderNodeMixShader")
-        mix.location = (330, 0)
         alpha_socket = image_node.outputs["Alpha"]
         if alpha_from_luminance:
             luminance = nodes.new("ShaderNodeRGBToBW")
@@ -544,10 +581,8 @@ def create_unlit_image_material(
             links.new(luminance.outputs["Val"], edge.inputs["Fac"])
             alpha_socket = edge.outputs["Color"]
             material["alpha_from_luminance"] = "ColorRamp 0.015 -> 0.06 hides black atlas padding"
-        links.new(alpha_socket, mix.inputs[0])
-        links.new(transparent_node.outputs[0], mix.inputs[1])
-        links.new(surface.outputs[0], mix.inputs[2])
-        links.new(mix.outputs[0], output.inputs["Surface"])
+        links.new(alpha_socket, surface.inputs["Alpha"])
+        links.new(surface.outputs[0], output.inputs["Surface"])
     else:
         links.new(surface.outputs[0], output.inputs["Surface"])
     return material
@@ -624,7 +659,7 @@ def create_grass_material(
     material.use_nodes = True
     if hasattr(material, "preview_render_type"):
         material.preview_render_type = "FLAT"
-    configure_transparency(material, "BLENDED")
+    configure_transparency(material, "DITHERED")
     material.diffuse_color = (0.55, 0.64, 0.31, 1.0)
     material["source_algorithm"] = (
         "legacy app.js Grass: PoissonDiskSampling 1.8/2.8/7, clustered 7-24 blades, "
@@ -637,8 +672,6 @@ def create_grass_material(
 
     output = nodes.new("ShaderNodeOutputMaterial")
     output.location = (900, 80)
-    transparent = nodes.new("ShaderNodeBsdfTransparent")
-    transparent.location = (520, -80)
     surface = nodes.new("ShaderNodeBsdfPrincipled")
     surface.name = "GRASS_SURFACE"
     surface.label = "Grass atlas through Blender 5.0 Principled BSDF"
@@ -647,11 +680,7 @@ def create_grass_material(
     surface.inputs["Roughness"].default_value = 1.0
     surface.inputs["Specular IOR Level"].default_value = 0.0
     surface.inputs["Emission Strength"].default_value = 1.0
-    mix = nodes.new("ShaderNodeMixShader")
-    mix.location = (720, 80)
-    links.new(transparent.outputs[0], mix.inputs[1])
-    links.new(surface.outputs[0], mix.inputs[2])
-    links.new(mix.outputs[0], output.inputs["Surface"])
+    links.new(surface.outputs[0], output.inputs["Surface"])
 
     texcoord = nodes.new("ShaderNodeTexCoord")
     texcoord.location = (-760, 220)
@@ -696,7 +725,7 @@ def create_grass_material(
     alpha_multiply.location = (390, -50)
     links.new(blade.outputs["Alpha"], alpha_multiply.inputs[0])
     links.new(object_info.outputs["Alpha"], alpha_multiply.inputs[1])
-    links.new(alpha_multiply.outputs[0], mix.inputs[0])
+    links.new(alpha_multiply.outputs[0], surface.inputs["Alpha"])
 
     reference_frame = nodes.new("NodeFrame")
     reference_frame.name = "SOURCE_GRASS_REFERENCE_ONLY"
@@ -1229,7 +1258,7 @@ def build_web_master(
         duplicate.hide_select = False
         duplicate.name = f"EDIT_{layer_name}"
         duplicate.data.name = f"EDIT_{layer_name}_Mesh"
-        removed_degenerate_faces = remove_zero_area_triangles(duplicate.data)
+        topology_cleanup = optimize_watercolor_card_mesh(duplicate.data)
         source_world_matrix = authored_world_matrix(original)
         duplicate.parent = None
         editable.objects.link(duplicate)
@@ -1239,7 +1268,10 @@ def build_web_master(
         schedule_occurrences[start_seconds] = stagger_index + 1
         has_curve_shape_key = add_source_curve_shape_key(duplicate)
         duplicate["has_source_curve_shape_key"] = has_curve_shape_key
-        duplicate["removed_source_degenerate_faces"] = removed_degenerate_faces
+        duplicate["flattened_source_plane_span"] = topology_cleanup["flattened_plane_span"]
+        duplicate["merged_source_duplicate_vertices"] = topology_cleanup["merged_vertices"]
+        duplicate["removed_source_degenerate_faces"] = topology_cleanup["removed_degenerate_faces"]
+        duplicate["reversed_source_faces"] = topology_cleanup["reversed_faces"]
         layer_animations.append(
             animate_watercolor_layer(duplicate, layer_name, start_seconds, stagger_index)
         )
@@ -1415,6 +1447,14 @@ def build_web_master(
         "watercolor_animation_end_frame": max(item["end_frame"] for item in layer_animations),
         "removed_source_degenerate_faces": sum(
             int(bpy.data.objects[name].get("removed_source_degenerate_faces", 0))
+            for name in editable_meshes
+        ),
+        "merged_source_duplicate_vertices": sum(
+            int(bpy.data.objects[name].get("merged_source_duplicate_vertices", 0))
+            for name in editable_meshes
+        ),
+        "reversed_source_faces": sum(
+            int(bpy.data.objects[name].get("reversed_source_faces", 0))
             for name in editable_meshes
         ),
     }

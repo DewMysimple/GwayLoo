@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import sys
 from pathlib import Path
@@ -200,6 +201,11 @@ def main() -> None:
     selectable_layers = 0
     triangle_faces = 0
     zero_area_faces = 0
+    duplicate_vertices = 0
+    duplicate_faces = 0
+    inconsistent_normals = 0
+    nonplanar_cards = 0
+    extreme_aspect_faces = 0
     material_layers = 0
     if source_scene:
         bpy.context.window.scene = source_scene
@@ -217,6 +223,25 @@ def main() -> None:
             selectable_layers += 1
         if not obj.data.uv_layers.active:
             fail(f"{obj.name} has no active UV map", failures)
+        quantized_vertices = [
+            tuple(round(component / 1e-6) for component in vertex.co)
+            for vertex in obj.data.vertices
+        ]
+        object_duplicate_vertices = len(quantized_vertices) - len(set(quantized_vertices))
+        duplicate_vertices += object_duplicate_vertices
+        if object_duplicate_vertices:
+            fail(f"{obj.name} contains {object_duplicate_vertices} duplicate vertices", failures)
+        face_keys = [tuple(sorted(polygon.vertices[:])) for polygon in obj.data.polygons]
+        object_duplicate_faces = len(face_keys) - len(set(face_keys))
+        duplicate_faces += object_duplicate_faces
+        if object_duplicate_faces:
+            fail(f"{obj.name} contains {object_duplicate_faces} duplicate faces", failures)
+        local_x = [vertex.co.x for vertex in obj.data.vertices]
+        plane_span = max(local_x) - min(local_x) if local_x else 0.0
+        if plane_span > 1e-9:
+            nonplanar_cards += 1
+            fail(f"{obj.name} is not planar; local X span is {plane_span}", failures)
+        reference_normal = obj.data.polygons[0].normal if obj.data.polygons else None
         for polygon in obj.data.polygons:
             if len(polygon.vertices) != 3:
                 fail(f"{obj.name} contains a non-triangle face with {len(polygon.vertices)} vertices", failures)
@@ -225,6 +250,22 @@ def main() -> None:
             if polygon.area <= 1e-12:
                 zero_area_faces += 1
                 fail(f"{obj.name} contains a zero-area triangle", failures)
+            if reference_normal is not None and polygon.normal.dot(reference_normal) < 0.999:
+                inconsistent_normals += 1
+                fail(f"{obj.name} contains an inconsistent face normal", failures)
+            vertices = [obj.data.vertices[index].co for index in polygon.vertices]
+            edge_lengths = [
+                (vertices[(index + 1) % 3] - vertices[index]).length
+                for index in range(3)
+            ]
+            aspect = (
+                max(edge_lengths) ** 2 / (4.0 * math.sqrt(3.0) * polygon.area)
+                if polygon.area > 1e-15
+                else math.inf
+            )
+            if aspect > 1e6:
+                extreme_aspect_faces += 1
+                fail(f"{obj.name} contains an extremely thin triangle", failures)
         action = obj.animation_data.action if obj.animation_data else None
         if action and action.name.startswith("WEB_REVEAL_"):
             animated_layers += 1
@@ -317,10 +358,10 @@ def main() -> None:
         if surface is None or surface.type != "BSDF_PRINCIPLED":
             fail(f"{material.name} must use the Blender 5.0 Principled watercolor surface", failures)
         else:
-            if material.surface_render_method != "BLENDED":
-                fail(f"{material.name} must keep smooth blended transparency", failures)
-            if material.use_transparency_overlap:
-                fail(f"{material.name} must disable transparent-layer overlap sorting", failures)
+            if material.surface_render_method != "DITHERED":
+                fail(f"{material.name} must use order-independent dithered cutout transparency", failures)
+            if not material.use_transparency_overlap:
+                fail(f"{material.name} must allow alpha holes to reveal overlapping surfaces", failures)
             if material.use_backface_culling:
                 fail(f"{material.name} must remain double-sided for editable 2D cards", failures)
             if surface.inputs["Base Color"].is_linked:
@@ -448,6 +489,21 @@ def main() -> None:
         grass_surface = grass_material.node_tree.nodes.get("GRASS_SURFACE")
         if grass_surface is None or grass_surface.type != "BSDF_PRINCIPLED":
             fail("WC_PROCEDURAL_GRASS must use a Blender 5.0 Principled surface", failures)
+        if hasattr(grass_material, "surface_render_method") and grass_material.surface_render_method != "DITHERED":
+            fail("WC_PROCEDURAL_GRASS must use dithered cutout transparency", failures)
+        if hasattr(grass_material, "use_transparency_overlap") and not grass_material.use_transparency_overlap:
+            fail("WC_PROCEDURAL_GRASS must allow transparent overlap", failures)
+        grass_alpha = grass_material.node_tree.nodes.get("BLADE_ALPHA_X_REVEAL")
+        if grass_surface is not None and not any(
+            link.from_node == grass_alpha
+            and link.from_socket.name == "Value"
+            and link.to_node == grass_surface
+            and link.to_socket.name == "Alpha"
+            for link in grass_material.node_tree.links
+        ):
+            fail("WC_PROCEDURAL_GRASS must drive Principled Alpha directly", failures)
+        if any(node.type in {"BSDF_TRANSPARENT", "MIX_SHADER"} for node in grass_material.node_tree.nodes):
+            fail("WC_PROCEDURAL_GRASS must not use transparent shader mixing", failures)
         if any(node.type == "EMISSION" for node in grass_material.node_tree.nodes):
             fail("WC_PROCEDURAL_GRASS must not use the legacy standalone Emission node", failures)
 
@@ -479,10 +535,23 @@ def main() -> None:
         ground_surface = ground_material.node_tree.nodes.get("IMAGE_SURFACE")
         if ground_surface is None or ground_surface.type != "BSDF_PRINCIPLED":
             fail("WC_Ground_Atlas must use a Blender 5.0 Principled surface", failures)
-        if hasattr(ground_material, "surface_render_method") and ground_material.surface_render_method != "BLENDED":
-            fail("WC_Ground_Atlas must use smooth blended transparency", failures)
+        if hasattr(ground_material, "surface_render_method") and ground_material.surface_render_method != "DITHERED":
+            fail("WC_Ground_Atlas must use dithered cutout transparency", failures)
+        if hasattr(ground_material, "use_transparency_overlap") and not ground_material.use_transparency_overlap:
+            fail("WC_Ground_Atlas must allow transparent overlap", failures)
+        if any(node.type in {"BSDF_TRANSPARENT", "MIX_SHADER"} for node in ground_material.node_tree.nodes):
+            fail("WC_Ground_Atlas must drive Principled Alpha directly", failures)
         if ground_material.node_tree.nodes.get("GROUND_PADDING_EDGE_CLIP") is None:
             fail("WC_Ground_Atlas is missing the black atlas padding mask", failures)
+        ground_alpha = ground_material.node_tree.nodes.get("GROUND_PADDING_EDGE_CLIP")
+        if ground_surface is not None and not any(
+            link.from_node == ground_alpha
+            and link.from_socket.name == "Color"
+            and link.to_node == ground_surface
+            and link.to_socket.name == "Alpha"
+            for link in ground_material.node_tree.links
+        ):
+            fail("WC_Ground_Atlas must drive Principled Alpha directly", failures)
         if any(node.type == "EMISSION" for node in ground_material.node_tree.nodes):
             fail("WC_Ground_Atlas must not use the legacy standalone Emission node", failures)
 
@@ -554,6 +623,11 @@ def main() -> None:
         "selectable_editable_layers": selectable_layers,
         "triangle_faces": triangle_faces,
         "zero_area_faces": zero_area_faces,
+        "duplicate_vertices": duplicate_vertices,
+        "duplicate_faces": duplicate_faces,
+        "inconsistent_normals": inconsistent_normals,
+        "nonplanar_cards": nonplanar_cards,
+        "extreme_aspect_faces": extreme_aspect_faces,
         "validated_materials": material_layers,
         "procedural_grass_objects": len(grass_objects),
         "procedural_grass_blades": grass_blades,
