@@ -335,6 +335,20 @@ def main() -> None:
             ]
             if not emission_links:
                 fail(f"{material.name} must drive Principled Emission Color from SOURCE_ATLAS", failures)
+            alpha_links = [
+                link
+                for link in material.node_tree.links
+                if link.from_node.name == "MASK_X_REVEAL"
+                and link.from_socket.name == "Value"
+                and link.to_node == surface
+                and link.to_socket.name == "Alpha"
+            ]
+            if not alpha_links:
+                fail(f"{material.name} must drive Principled Alpha from the watercolor mask", failures)
+            if material.node_tree.nodes.get("Transparent BSDF") is not None:
+                fail(f"{material.name} must not use a Transparent BSDF for coplanar card alpha", failures)
+            if any(node.type == "MIX_SHADER" for node in material.node_tree.nodes):
+                fail(f"{material.name} must not use Mix Shader for coplanar card alpha", failures)
             if material.node_tree.nodes.get("ATLAS_UV_CLAMP_MIN") is None:
                 fail(f"{material.name} is missing the local atlas UV minimum clamp", failures)
             if material.node_tree.nodes.get("ATLAS_UV_CLAMP_MAX") is None:

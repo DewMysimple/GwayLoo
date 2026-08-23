@@ -158,7 +158,7 @@ def build_background_preview_scene() -> bpy.types.Scene:
 
 
 def build_material_angle_preview_scenes() -> list[bpy.types.Scene]:
-    """Render the same watercolor card face-on, obliquely, and from behind."""
+    """Render the same watercolor card face-on, obliquely, grazing, and behind."""
     source = bpy.data.objects["EDIT_tree_1"]
     center = sum((source.matrix_world @ Vector(corner) for corner in source.bound_box), Vector()) / 8.0
     basis = source.matrix_world.to_3x3()
@@ -168,6 +168,7 @@ def build_material_angle_preview_scenes() -> list[bpy.types.Scene]:
     for name, offset in (
         ("front", normal * 30.0),
         ("oblique", normal * 24.0 + tangent * 18.0),
+        ("grazing", normal * 6.0 + tangent * 30.0),
         ("back", normal * -30.0),
     ):
         scene = bpy.data.scenes.new(f"VALIDATION_MATERIAL_ANGLE_{name.upper()}")
@@ -219,7 +220,7 @@ def main() -> None:
     rendered.append(render(material_preview, 0, 512, 512, "material-preview-tree.png"))
     for angle_scene, angle_name in zip(
         material_angle_previews,
-        ("front", "oblique", "back"),
+        ("front", "oblique", "grazing", "back"),
         strict=True,
     ):
         rendered.append(render(angle_scene, 0, 512, 512, f"material-angle-{angle_name}.png"))

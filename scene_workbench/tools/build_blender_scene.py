@@ -362,7 +362,7 @@ def create_watercolor_material(
     material["mask_edge_clip"] = "ColorRamp 0.02 -> 0.18; atlas padding is transparent"
     material["view_angle_policy"] = (
         "Double-sided 2D card; watercolor color is emitted through Principled BSDF "
-        "to avoid view-angle diffuse-light changes; transparency remains smooth blended."
+        "to avoid view-angle diffuse-light changes; Principled Alpha drives smooth blended transparency."
     )
     material["source_reveal_durations_seconds"] = json.dumps(
         {
@@ -384,21 +384,19 @@ def create_watercolor_material(
 
     output = nodes.new("ShaderNodeOutputMaterial")
     output.location = (1000, 80)
-    transparent = nodes.new("ShaderNodeBsdfTransparent")
-    transparent.location = (620, -40)
     surface = nodes.new("ShaderNodeBsdfPrincipled")
     surface.name = "WATERCOLOR_SURFACE"
     surface.label = "Atlas color through Blender 5.0 Principled BSDF"
-    surface.location = (620, 160)
+    surface.location = (620, 80)
     surface.inputs["Metallic"].default_value = 0.0
     surface.inputs["Roughness"].default_value = 1.0
     surface.inputs["Specular IOR Level"].default_value = 0.0
     surface.inputs["Emission Strength"].default_value = 1.0
-    mix = nodes.new("ShaderNodeMixShader")
-    mix.location = (820, 100)
-    links.new(transparent.outputs[0], mix.inputs[1])
-    links.new(surface.outputs[0], mix.inputs[2])
-    links.new(mix.outputs[0], output.inputs["Surface"])
+    # Feed alpha directly into Principled instead of mixing a Transparent BSDF
+    # with the surface.  A BLENDED material made from several coplanar mesh
+    # triangles can otherwise be depth-sorted differently at grazing/back
+    # angles, exposing the card's unpainted region as a gray or black slab.
+    links.new(surface.outputs[0], output.inputs["Surface"])
 
     texcoord = nodes.new("ShaderNodeTexCoord")
     texcoord.location = (-900, 160)
@@ -475,7 +473,7 @@ def create_watercolor_material(
     links.new(mask_node.outputs["Color"], mask_edge.inputs["Fac"])
     links.new(mask_edge.outputs["Color"], alpha_multiply.inputs[0])
     links.new(object_info.outputs["Alpha"], alpha_multiply.inputs[1])
-    links.new(alpha_multiply.outputs[0], mix.inputs[0])
+    links.new(alpha_multiply.outputs[0], surface.inputs["Alpha"])
 
     if sdf_remap:
         frame = nodes.new("NodeFrame")
