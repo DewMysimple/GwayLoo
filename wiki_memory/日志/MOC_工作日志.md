@@ -15,7 +15,11 @@ supersedes: null
 
 | 时间 | 类型 | 目标 | 状态 | 主题 | 日志 |
 | --- | --- | --- | --- | --- | --- |
+| 2026-08-23 | feature | - | archived | blender-chinese-workspaces | [[日志/2026-08-23-生成Blender项目中文工作区.md|2026-08-23｜生成 Blender 项目中文工作区]] |
+| 2026-08-23 | bug | - | archived | blender-interface-language | [[日志/2026-08-23-Blender界面语言诊断.md|2026-08-23｜Blender 界面语言诊断]] |
 | 2026-08-23 | bug | 修复 Blender 水彩材质黑屏、补齐网页程序化草，并明确禁止构建脚本修改 Blender 用户偏好。 | archived | blender-material-remap-procedural-grass-fix | [[日志/2026-08-23-Blender材质映射与程序化草修复.md|2026-08-23｜Blender 材质映射与程序化草修复]] |
+| 2026-08-23 | bug | - | archived | blender-workspace-names | [[日志/2026-08-23-Blender工作区名称未翻译诊断.md|2026-08-23｜Blender 工作区名称未翻译诊断]] |
+| 2026-08-23 | bug | - | archived | blender-launcher-vs-project-workspace | [[日志/2026-08-23-Blender启动器与项目工作区差异.md|2026-08-23｜Blender 启动器与项目工作区差异]] |
 | 2026-08-22 | bug | 修复第三个景观结束后滚动提前终止，恢复原版沉浸区之后的完整连续内容。 | archived | source-faithful-page-tail-scroll-restoration | [[日志/2026-08-22-页面尾部连续滚动恢复.md|2026-08-22｜页面尾部连续滚动恢复]] |
 | 2026-08-22 | feature | 保持原版尾部的文字、图标与布局，同时阻止订阅、赠送、邮箱、社交分享和奖项内容跳转到其他页面。 | archived | experience-tail-external-links-disabled | [[日志/2026-08-22-页面尾部外链静态化.md|2026-08-22｜页面尾部外链静态化]] |
 | 2026-08-22 | bug | 恢复 React 迁移后偏小的画布诗句字号，以及失效的原版滚轮推进交互。 | archived | original-poem-scale-and-scroll-restoration | [[日志/2026-08-22-诗句字号与滚动交互恢复.md|2026-08-22｜诗句字号与滚动交互恢复]] |

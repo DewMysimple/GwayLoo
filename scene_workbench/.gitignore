@@ -2,6 +2,7 @@
 source_snapshot/*
 blender/*.blend
 blender/*.blend1
+blender/*.blend2
 generated/*
 reports/rendered/
 

@@ -29,6 +29,20 @@ REPORT = WORKBENCH / "reports/blender-build.json"
 FPS = 60
 CAMERA_SAMPLE_COUNT = 3587
 CAMERA_LOADER_FINAL_Z = 0.4
+WORKSPACE_NAMES_ZH_CN = {
+    "Layout": "布局",
+    "Modeling": "建模",
+    "Sculpting": "雕刻",
+    "UV Editing": "UV编辑",
+    "Texture Paint": "纹理绘制",
+    "Shading": "着色",
+    "Animation": "动画",
+    "Rendering": "渲染",
+    "Compositing": "合成",
+    "Geometry Nodes": "几何节点",
+    "Scripting": "脚本",
+}
+DEFAULT_WORKSPACE_NAME = WORKSPACE_NAMES_ZH_CN["Layout"]
 REVEAL_ALPHA_SECONDS = 0.01
 REVEAL_CURVE_SECONDS = 10.0
 REVEAL_ROTATION_SECONDS = 7.0
@@ -161,8 +175,17 @@ def configure_scene(scene: bpy.types.Scene, name: str, role: str) -> bpy.types.S
     return scene
 
 
+def localize_workspaces() -> None:
+    """Make the saved project workspaces match the Chinese Blender startup UI."""
+    for english_name, chinese_name in WORKSPACE_NAMES_ZH_CN.items():
+        workspace = bpy.data.workspaces.get(english_name)
+        if workspace is not None:
+            workspace.name = chinese_name
+
+
 def clear_file() -> tuple[bpy.types.Scene, bpy.types.Scene, bpy.types.Scene]:
     bpy.ops.wm.read_factory_settings(use_empty=True)
+    localize_workspaces()
     animation_scene = configure_scene(
         bpy.context.scene,
         "WEB_ANIMATION",
@@ -1443,7 +1466,7 @@ def configure_artist_workspace(
                 shading.use_scene_lights = False
                 shading.background_type = "VIEWPORT"
                 shading.background_color = (0.35, 0.35, 0.35)
-    layout = bpy.data.workspaces.get("Layout")
+    layout = bpy.data.workspaces.get(DEFAULT_WORKSPACE_NAME)
     if layout is not None:
         bpy.context.window.workspace = layout
         for area in bpy.context.screen.areas:
