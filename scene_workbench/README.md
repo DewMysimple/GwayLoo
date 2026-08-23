@@ -32,7 +32,7 @@ Use `ARTIST_EDIT` for mesh, UV and material work. Use `WEB_ANIMATION` to play th
 
 Each of the 26 editable watercolor objects has its own `WEB_REVEAL_*` action. These actions reproduce the source schedule and animate opacity, paper curvature, entry rotation, reveal progress and cutout/ground opacity. The extracted source shadow timing remains stored as unused runtime metadata until the WebGL shadow shader is accurately rebuilt. Each landscape scene exposes `OVER_MIX_CONTROL["mix"]`: zero shows the base video, one shows the over video.
 
-Watercolor opacity is carried by object alpha and read through `OBJECT_ALPHA` in each material. The material uses Blender 5.0's Principled BSDF surface so the atlas remains visible in EEVEE and Material Preview; the object still follows the source reveal animation. Visible watercolor crops use the legacy runtime's `atlas/texture` remap table; the separate `atlas/sdf` table remains attached as reference metadata and is not substituted for the visible atlas.
+Watercolor opacity is carried by object alpha and read through `OBJECT_ALPHA` in each material. The material uses Blender 5.0's Principled BSDF surface with the atlas connected to Emission Color and a black diffuse Base Color, so a flat 2D painting does not change brightness when the camera rotates across its authored single normal. Cards remain double-sided and use smooth blended transparency; local UVs are clamped before each atlas remap so a small source UV overshoot cannot sample a neighboring atlas region. Visible watercolor crops use the legacy runtime's `atlas/texture` remap table; the separate `atlas/sdf` table remains attached as reference metadata and is not substituted for the visible atlas.
 
 `PROCEDURAL_GRASS` contains the 23 layers for which the legacy runtime explicitly sets `hasGround: true`. The deterministic Blender mirror contains 3141 editable blade ribbons, the ten source atlas regions, 24 source color-gradient columns, source Poisson-disc spacing and wind/reveal animation channels. `land_back_5`, `background_2` and `viaduc_1` intentionally have no grass because their source configuration disables the ground component. Browser cursor-proximity reveal remains documented as an interaction boundary rather than being visually guessed.
 
@@ -53,7 +53,7 @@ python scene_workbench/tools/generate_manifests.py
 & 'F:\Blender\blender.exe' --background --factory-startup scene_workbench/blender/Verminoble_Scene_Mirror_5_0.blend --python scene_workbench/tools/validate_blend.py
 ```
 
-To regenerate 25 validation renders (seven source animation frames, one artist overview, four artist frames covering the former shadow issue, one material preview, one tree-and-grass preview, one background-card preview, four source-camera frames and six landscape frames):
+To regenerate 29 validation renders (seven source animation frames, one artist overview, five artist frames including the reported frame 690, one material preview, three face/oblique/back material-angle previews, one tree-and-grass preview, one background-card preview, four source-camera frames and six landscape frames):
 
 ```powershell
 & 'F:\Blender\blender.exe' --background --factory-startup scene_workbench/blender/Verminoble_Scene_Mirror_5_0.blend --python scene_workbench/tools/render_validation.py

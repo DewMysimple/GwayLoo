@@ -157,12 +157,52 @@ def build_background_preview_scene() -> bpy.types.Scene:
     return scene
 
 
+def build_material_angle_preview_scenes() -> list[bpy.types.Scene]:
+    """Render the same watercolor card face-on, obliquely, and from behind."""
+    source = bpy.data.objects["EDIT_tree_1"]
+    center = sum((source.matrix_world @ Vector(corner) for corner in source.bound_box), Vector()) / 8.0
+    basis = source.matrix_world.to_3x3()
+    normal = (basis @ source.data.polygons[0].normal).normalized()
+    tangent = (basis @ Vector((0.0, 1.0, 0.0))).normalized()
+    scenes: list[bpy.types.Scene] = []
+    for name, offset in (
+        ("front", normal * 30.0),
+        ("oblique", normal * 24.0 + tangent * 18.0),
+        ("back", normal * -30.0),
+    ):
+        scene = bpy.data.scenes.new(f"VALIDATION_MATERIAL_ANGLE_{name.upper()}")
+        available_engines = {item.identifier for item in scene.render.bl_rna.properties["engine"].enum_items}
+        scene.render.engine = "BLENDER_EEVEE_NEXT" if "BLENDER_EEVEE_NEXT" in available_engines else "BLENDER_EEVEE"
+        scene.render.film_transparent = False
+        scene.world = bpy.data.worlds.new(f"VALIDATION_MATERIAL_ANGLE_{name}_World")
+        set_world_color(scene.world, (0.18, 0.18, 0.18))
+
+        card = source.copy()
+        card.name = f"VALIDATION_TREE_{name.upper()}"
+        card.animation_data_clear()
+        card.color = (1.0, 1.0, 1.0, 1.0)
+        scene.collection.objects.link(card)
+
+        camera_data = bpy.data.cameras.new(f"VALIDATION_MATERIAL_ANGLE_{name}_CameraData")
+        camera_data.type = "ORTHO"
+        camera_data.ortho_scale = 2.2
+        camera = bpy.data.objects.new(f"VALIDATION_MATERIAL_ANGLE_{name}_Camera", camera_data)
+        camera_location = center + offset
+        camera_rotation = (center - camera_location).to_track_quat("-Z", "Y")
+        camera.matrix_world = Matrix.Translation(camera_location) @ camera_rotation.to_matrix().to_4x4()
+        scene.collection.objects.link(camera)
+        scene.camera = camera
+        scenes.append(scene)
+    return scenes
+
+
 def main() -> None:
     OUTPUT.mkdir(parents=True, exist_ok=True)
     rendered: list[dict[str, object]] = []
     # Build isolated previews before timeline validation changes the evaluated
     # state of data blocks shared by ARTIST_EDIT and WEB_ANIMATION.
     material_preview = build_material_preview_scene()
+    material_angle_previews = build_material_angle_preview_scenes()
     grass_preview = build_grass_preview_scene()
     background_preview = build_background_preview_scene()
     web = bpy.data.scenes["WEB_ANIMATION"]
@@ -174,9 +214,15 @@ def main() -> None:
 
     artist = bpy.data.scenes["ARTIST_EDIT"]
     rendered.append(render(artist, 3586, 960, 540, "artist-edit-materials.png"))
-    for frame in (71, 73, 181, 424):
+    for frame in (71, 73, 181, 424, 690):
         rendered.append(render(artist, frame, 960, 540, f"artist-edit-frame-{frame:04d}.png"))
     rendered.append(render(material_preview, 0, 512, 512, "material-preview-tree.png"))
+    for angle_scene, angle_name in zip(
+        material_angle_previews,
+        ("front", "oblique", "back"),
+        strict=True,
+    ):
+        rendered.append(render(angle_scene, 0, 512, 512, f"material-angle-{angle_name}.png"))
     rendered.append(render(grass_preview, 3586, 720, 720, "grass-preview-tree.png"))
     rendered.append(render(background_preview, 3586, 960, 540, "background-preview-card.png"))
 

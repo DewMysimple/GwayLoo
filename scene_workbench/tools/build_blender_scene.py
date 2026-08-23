@@ -298,7 +298,27 @@ def add_vector_remap(
     x: float,
     y: float,
     label: str,
+    clamp_input: bool = False,
 ) -> bpy.types.Node:
+    vector_input = texcoord.outputs["UV"]
+    if clamp_input:
+        clamp_min = nodes.new("ShaderNodeVectorMath")
+        clamp_min.name = f"{label}_UV_CLAMP_MIN"
+        clamp_min.label = f"{label} UV clamp minimum"
+        clamp_min.operation = "MAXIMUM"
+        clamp_min.location = (x - 210, y)
+        clamp_min.inputs[1].default_value = (0.0, 0.0, 0.0)
+        links.new(vector_input, clamp_min.inputs[0])
+
+        clamp_max = nodes.new("ShaderNodeVectorMath")
+        clamp_max.name = f"{label}_UV_CLAMP_MAX"
+        clamp_max.label = f"{label} UV clamp maximum"
+        clamp_max.operation = "MINIMUM"
+        clamp_max.location = (x - 20, y)
+        clamp_max.inputs[1].default_value = (1.0, 1.0, 1.0)
+        links.new(clamp_min.outputs["Vector"], clamp_max.inputs[0])
+        vector_input = clamp_max.outputs["Vector"]
+
     multiply = nodes.new("ShaderNodeVectorMath")
     multiply.name = f"{label}_UV_SCALE"
     multiply.label = f"{label} UV scale"
@@ -315,7 +335,7 @@ def add_vector_remap(
     # the crop upright by moving its bottom edge to 1 - y - height.
     blender_y = 1.0 - remap["y"] - remap["height"]
     add.inputs[1].default_value = (remap["x"], blender_y, 0.0)
-    links.new(texcoord.outputs["UV"], multiply.inputs[0])
+    links.new(vector_input, multiply.inputs[0])
     links.new(multiply.outputs["Vector"], add.inputs[0])
     return add
 
@@ -340,6 +360,10 @@ def create_watercolor_material(
     material["atlas_remap"] = json.dumps(remap, sort_keys=True)
     material["reveal_start_seconds"] = reveal_start_seconds
     material["mask_edge_clip"] = "ColorRamp 0.02 -> 0.18; atlas padding is transparent"
+    material["view_angle_policy"] = (
+        "Double-sided 2D card; watercolor color is emitted through Principled BSDF "
+        "to avoid view-angle diffuse-light changes; transparency remains smooth blended."
+    )
     material["source_reveal_durations_seconds"] = json.dumps(
         {
             "alpha": REVEAL_ALPHA_SECONDS,
@@ -382,7 +406,16 @@ def create_watercolor_material(
     object_info.name = "OBJECT_ALPHA"
     object_info.label = "Animated object alpha; material preview remains opaque"
     object_info.location = (120, 20)
-    atlas_uv = add_vector_remap(nodes, links, texcoord, remap, -700, 240, "ATLAS")
+    atlas_uv = add_vector_remap(
+        nodes,
+        links,
+        texcoord,
+        remap,
+        -700,
+        240,
+        "ATLAS",
+        clamp_input=True,
+    )
 
     atlas_node = nodes.new("ShaderNodeTexImage")
     atlas_node.name = "SOURCE_ATLAS"
@@ -400,7 +433,11 @@ def create_watercolor_material(
     mask_node.location = (-260, -20)
     links.new(atlas_uv.outputs["Vector"], atlas_node.inputs["Vector"])
     links.new(atlas_uv.outputs["Vector"], mask_node.inputs["Vector"])
-    links.new(atlas_node.outputs["Color"], surface.inputs["Base Color"])
+    # A watercolor card is a 2D painted surface, not a lit 3D object. Keep the
+    # Principled surface for Blender 5.0 compatibility, but remove the diffuse
+    # contribution so rotating the camera cannot turn the painting gray because
+    # its single authored normal is facing away from the studio light.
+    surface.inputs["Base Color"].default_value = (0.0, 0.0, 0.0, 1.0)
     links.new(atlas_node.outputs["Color"], surface.inputs["Emission Color"])
 
     def driven_value(name: str, property_name: str, y: float) -> bpy.types.Node:

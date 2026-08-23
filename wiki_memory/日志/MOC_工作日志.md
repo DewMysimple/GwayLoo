@@ -24,6 +24,7 @@ supersedes: null
 | 2026-08-23 | bug | - | archived | blender-atlas-material-black-preview-diagnosis | [[日志/2026-08-23-Blender图集材质黑屏诊断.md|2026-08-23｜Blender 图集材质黑屏诊断]] |
 | 2026-08-23 | bug | - | archived | blender-atlas-material-principled-fix | [[日志/2026-08-23-Blender图集材质节点整改.md|2026-08-23｜Blender 图集材质节点整改]] |
 | 2026-08-23 | bug | - | archived | blender-launcher-vs-project-workspace | [[日志/2026-08-23-Blender启动器与项目工作区差异.md|2026-08-23｜Blender 启动器与项目工作区差异]] |
+| 2026-08-23 | bug | - | archived | blender-watercolor-card-view-angle-material-fix | [[日志/2026-08-23-Blender主素材2D图层视角材质稳定整改.md|2026-08-23｜Blender 主素材 2D 图层视角材质稳定整改]] |
 | 2026-08-22 | bug | 修复第三个景观结束后滚动提前终止，恢复原版沉浸区之后的完整连续内容。 | archived | source-faithful-page-tail-scroll-restoration | [[日志/2026-08-22-页面尾部连续滚动恢复.md|2026-08-22｜页面尾部连续滚动恢复]] |
 | 2026-08-22 | feature | 保持原版尾部的文字、图标与布局，同时阻止订阅、赠送、邮箱、社交分享和奖项内容跳转到其他页面。 | archived | experience-tail-external-links-disabled | [[日志/2026-08-22-页面尾部外链静态化.md|2026-08-22｜页面尾部外链静态化]] |
 | 2026-08-22 | bug | 恢复 React 迁移后偏小的画布诗句字号，以及失效的原版滚轮推进交互。 | archived | original-poem-scale-and-scroll-restoration | [[日志/2026-08-22-诗句字号与滚动交互恢复.md|2026-08-22｜诗句字号与滚动交互恢复]] |

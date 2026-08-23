@@ -316,6 +316,29 @@ def main() -> None:
         surface = material.node_tree.nodes.get("WATERCOLOR_SURFACE")
         if surface is None or surface.type != "BSDF_PRINCIPLED":
             fail(f"{material.name} must use the Blender 5.0 Principled watercolor surface", failures)
+        else:
+            if material.surface_render_method != "BLENDED":
+                fail(f"{material.name} must keep smooth blended transparency", failures)
+            if material.use_transparency_overlap:
+                fail(f"{material.name} must disable transparent-layer overlap sorting", failures)
+            if material.use_backface_culling:
+                fail(f"{material.name} must remain double-sided for editable 2D cards", failures)
+            if surface.inputs["Base Color"].is_linked:
+                fail(f"{material.name} must not use angle-dependent diffuse Base Color lighting", failures)
+            emission_links = [
+                link
+                for link in material.node_tree.links
+                if link.from_node.name == "SOURCE_ATLAS"
+                and link.from_socket.name == "Color"
+                and link.to_node == surface
+                and link.to_socket.name == "Emission Color"
+            ]
+            if not emission_links:
+                fail(f"{material.name} must drive Principled Emission Color from SOURCE_ATLAS", failures)
+            if material.node_tree.nodes.get("ATLAS_UV_CLAMP_MIN") is None:
+                fail(f"{material.name} is missing the local atlas UV minimum clamp", failures)
+            if material.node_tree.nodes.get("ATLAS_UV_CLAMP_MAX") is None:
+                fail(f"{material.name} is missing the local atlas UV maximum clamp", failures)
         if any(node.type == "EMISSION" for node in material.node_tree.nodes):
             fail(f"{material.name} must not use the legacy standalone Emission node", failures)
         if hasattr(material, "preview_render_type") and material.preview_render_type != "FLAT":
