@@ -3,7 +3,7 @@ type: moc
 status: active
 kind: process
 importance: high
-updated: 2026-08-23
+updated: 2026-08-24
 topic: work-log-index
 source_logs: []
 supersedes: null
@@ -15,6 +15,8 @@ supersedes: null
 
 | 时间 | 类型 | 目标 | 状态 | 主题 | 日志 |
 | --- | --- | --- | --- | --- | --- |
+| 2026-08-24 | maintenance | - | archived | gwayloo-brand-migration | [[日志/2026-08-24-GwayLoo品牌迁移.md|GwayLoo 品牌迁移]] |
+| 2026-08-24 | maintenance | - | archived | github-repository-url | [[日志/2026-08-24-GitHub仓库地址更新.md|GitHub 仓库地址更新]] |
 | 2026-08-23 | feature | - | archived | blender-chinese-workspaces | [[日志/2026-08-23-生成Blender项目中文工作区.md|2026-08-23｜生成 Blender 项目中文工作区]] |
 | 2026-08-23 | bug | - | archived | blender-watercolor-alpha-depth-and-topology | [[日志/2026-08-23-Blender透明穿透与水彩卡拓扑整改.md|2026-08-23｜Blender 透明穿透与水彩卡拓扑整改]] |
 | 2026-08-23 | bug | 撤回 Blender 中不符合源网站结构的竖直阴影卡片，恢复只包含源内容的可编辑场景。 | archived | blender-shadow-approximation-removal | [[日志/2026-08-23-Blender误加阴影近似撤回与源阴影边界确认.md|2026-08-23｜Blender 误加阴影近似撤回与源阴影边界确认]] |

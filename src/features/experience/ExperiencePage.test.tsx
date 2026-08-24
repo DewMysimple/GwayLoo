@@ -6,7 +6,7 @@ describe('ExperiencePage', () => {
   it('renders the original immersive experience contract', () => {
     render(<ExperiencePage />);
 
-    expect(screen.getByLabelText('Verminoble 沉浸体验')).toBeInTheDocument();
+    expect(screen.getByLabelText('GwayLoo 沉浸体验')).toBeInTheDocument();
     expect(screen.getByText('Loading')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Turn sound on' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Restart the experience' })).toBeInTheDocument();

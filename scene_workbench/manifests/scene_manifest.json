@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "source": "current Verminoble runtime snapshot",
+  "source": "current GwayLoo runtime snapshot",
   "fps": 60,
   "landscape_video_duration_seconds": 10,
   "gltf": {

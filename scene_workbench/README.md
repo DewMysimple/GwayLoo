@@ -1,4 +1,4 @@
-# Verminoble Scene Workbench
+# GwayLoo Scene Workbench
 
 This directory is an isolated local art workspace for studying and rebuilding the webpage's watercolor scene in Blender. The application must never import assets from here.
 

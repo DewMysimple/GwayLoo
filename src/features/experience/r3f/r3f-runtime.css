@@ -1,12 +1,12 @@
 @font-face {
-  font-family: 'Verminoble Canela';
+  font-family: 'GwayLoo Canela';
   font-style: normal;
   font-weight: 100;
   src: url('/wp-content/themes/davidwhyte/resources/assets/fonts/CanelaText-Thin.woff2') format('woff2');
 }
 
 @font-face {
-  font-family: 'Verminoble Roobert';
+  font-family: 'GwayLoo Roobert';
   font-style: normal;
   font-weight: 400;
   src: url('/wp-content/themes/davidwhyte/resources/assets/fonts/Roobert-Regular.woff2') format('woff2');
@@ -46,7 +46,7 @@
 
 .r3f-poem {
   color: #413a39;
-  font-family: 'Verminoble Canela', serif;
+  font-family: 'GwayLoo Canela', serif;
   font-size: 30px;
   font-weight: 100;
   line-height: 48px;
@@ -76,7 +76,7 @@
   border: 0;
   bottom: 20vh;
   color: #111;
-  font-family: 'Verminoble Roobert', sans-serif;
+  font-family: 'GwayLoo Roobert', sans-serif;
   font-size: 14px;
   left: 10vw;
   overflow: hidden;
@@ -100,7 +100,7 @@
   border: 0;
   color: #5f5a59;
   cursor: pointer;
-  font-family: 'Verminoble Canela', serif;
+  font-family: 'GwayLoo Canela', serif;
   font-size: 18px;
   font-weight: 100;
   position: absolute;
@@ -110,7 +110,7 @@
 }
 
 .r3f-scene-title {
-  font-family: 'Verminoble Canela', serif;
+  font-family: 'GwayLoo Canela', serif;
   font-size: 18px;
   opacity: 0;
   pointer-events: none;
@@ -239,7 +239,7 @@ html.notouch .r3f-experience-shell > .sound:hover .sound__container svg path:nth
   border: 0;
   color: #111;
   cursor: pointer;
-  font-family: 'Verminoble Roobert', sans-serif;
+  font-family: 'GwayLoo Roobert', sans-serif;
   font-size: 14px;
   left: 50px;
   position: absolute;

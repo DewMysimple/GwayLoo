@@ -105,9 +105,9 @@ supersedes: null
 
 Agent 可以报告问题并提出修复方案，但不能在未获授权时批量删除历史、覆盖 active 决策或改变原始来源。
 
-## Verminoble 项目上下文
+## GwayLoo 项目上下文
 
-- 项目主名为 `Verminoble`；`Dew-StanzaVerse` 是本地工作目录名，`David Whyte Experience` 是原始复刻基线名称。
+- 项目主名为 `GwayLoo`；`Dew-StanzaVerse` 是本地工作目录名，`David Whyte Experience` 是原始复刻基线名称。
 - 当前工程是 Vite + React + TypeScript 静态应用；不要把已移除的账户、商城、表单和外链当作现有能力。
 - 应用入口是根目录 `index.html` 和 `src/main.tsx`；开发使用 `npm run dev`，构建使用 `npm run build`。
 - 旧 WebGL 运行时位于 `public/wp-content/themes/davidwhyte/app.js`，仅由 `src/features/experience/LegacyRuntimeBridge.tsx` 加载。默认保持 legacy；`?runtime=r3f` 是新 React Three Fiber 运行时的验收入口。

@@ -62,10 +62,10 @@ test('R3F preserves the two loading stages', async ({ page }) => {
 test('R3F scroll, landscapes, FAQ, static links and restart stay in-page', async ({ page }, testInfo) => {
   await page.addInitScript(() => {
     const originalPlay = HTMLMediaElement.prototype.play;
-    Object.defineProperty(window, '__verminoblePlayCalls', { configurable: true, value: 0, writable: true });
+    Object.defineProperty(window, '__gwaylooPlayCalls', { configurable: true, value: 0, writable: true });
     HTMLMediaElement.prototype.play = function play() {
-      const runtimeWindow = window as typeof window & { __verminoblePlayCalls: number };
-      runtimeWindow.__verminoblePlayCalls += 1;
+      const runtimeWindow = window as typeof window & { __gwaylooPlayCalls: number };
+      runtimeWindow.__gwaylooPlayCalls += 1;
       return originalPlay.call(this);
     };
   });
@@ -97,7 +97,7 @@ test('R3F scroll, landscapes, FAQ, static links and restart stay in-page', async
   await sound.click();
   await expect(sound).toHaveAccessibleName('Turn sound off');
   await expect.poll(() => page.evaluate(
-    () => (window as typeof window & { __verminoblePlayCalls: number }).__verminoblePlayCalls,
+    () => (window as typeof window & { __gwaylooPlayCalls: number }).__gwaylooPlayCalls,
   )).toBeGreaterThan(0);
 
   const metrics = await page.evaluate(() => ({

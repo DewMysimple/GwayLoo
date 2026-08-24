@@ -17,7 +17,7 @@ New-Item -ItemType Directory -Path $tooling, $converted -Force | Out-Null
 if (-not (Test-Path -LiteralPath $ktxExe)) {
     $url = "https://github.com/KhronosGroup/KTX-Software/releases/download/v4.4.2/KTX-Software-4.4.2-Windows-x64.exe"
     if (-not (Test-Path -LiteralPath $installer)) {
-        Invoke-WebRequest -Uri $url -Headers @{"User-Agent" = "Verminoble-scene-workbench"} -OutFile $installer
+        Invoke-WebRequest -Uri $url -Headers @{"User-Agent" = "GwayLoo-scene-workbench"} -OutFile $installer
     }
     $process = Start-Process -FilePath $installer -ArgumentList "/S", "/D=$ktxHome" -WindowStyle Hidden -Wait -PassThru
     if ($process.ExitCode -ne 0) {
@@ -54,4 +54,3 @@ if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $fontOutput)) {
 }
 
 Write-Output "Prepared support assets in $converted"
-

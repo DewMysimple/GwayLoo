@@ -28,7 +28,7 @@ export interface ExperienceCopy {
 }
 
 export const experienceCopy: ExperienceCopy = {
-  brandName: 'Verminoble',
+  brandName: 'GwayLoo',
   loading: 'Loading',
   intro: "Access David's library to discover his poems, essays, courses and short films",
   scrollHint: 'Scroll to explore',

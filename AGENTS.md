@@ -1,4 +1,4 @@
-# Verminoble Agent 入口
+# GwayLoo Agent 入口
 
 本项目的完整工程记忆位于 [`wiki_memory/`](./wiki_memory/)。开始工作前，先读取 [`wiki_memory/AGENTS.md`](./wiki_memory/AGENTS.md)，再按其中规定的顺序读取当前状态、决策、知识和必要日志。
 

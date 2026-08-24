@@ -1,15 +1,15 @@
-const legacyScriptId = 'verminoble-legacy-runtime';
+const legacyScriptId = 'gwayloo-legacy-runtime';
 
 declare global {
   interface Window {
     ADMIN_AJAX_URL?: string;
     loaderProgress?: number;
-    __verminobleLegacyRuntime?: Promise<void>;
+    __gwaylooLegacyRuntime?: Promise<void>;
   }
 }
 
 export function loadLegacyRuntime(): Promise<void> {
-  if (window.__verminobleLegacyRuntime) return window.__verminobleLegacyRuntime;
+  if (window.__gwaylooLegacyRuntime) return window.__gwaylooLegacyRuntime;
 
   window.ADMIN_AJAX_URL = '/';
   document.body.dataset.component = 'MobileResize';
@@ -18,7 +18,7 @@ export function loadLegacyRuntime(): Promise<void> {
     ? Promise.resolve()
     : new Promise<void>((resolve) => window.addEventListener('load', () => resolve(), { once: true }));
 
-  window.__verminobleLegacyRuntime = documentReady.then(() => new Promise<void>((resolve, reject) => {
+  window.__gwaylooLegacyRuntime = documentReady.then(() => new Promise<void>((resolve, reject) => {
       const existingScript = document.getElementById(legacyScriptId) as HTMLScriptElement | null;
       if (existingScript) {
         if (existingScript.dataset.loaded === 'true') {
@@ -42,5 +42,5 @@ export function loadLegacyRuntime(): Promise<void> {
       document.body.append(script);
     }));
 
-  return window.__verminobleLegacyRuntime;
+  return window.__gwaylooLegacyRuntime;
 }

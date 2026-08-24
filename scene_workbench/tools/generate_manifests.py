@@ -239,7 +239,7 @@ def normalized_text_equal(left: Path, right: Path) -> bool:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Inventory the isolated Verminoble scene snapshot")
+    parser = argparse.ArgumentParser(description="Inventory the isolated GwayLoo scene snapshot")
     parser.add_argument("--reference-root", type=Path, default=REFERENCE_XP)
     args = parser.parse_args()
 
@@ -275,7 +275,7 @@ def main() -> None:
     )
     scene_manifest = {
         "schema": 1,
-        "source": "current Verminoble runtime snapshot",
+        "source": "current GwayLoo runtime snapshot",
         "fps": 60,
         "landscape_video_duration_seconds": 10,
         "gltf": parse_glb(glb),

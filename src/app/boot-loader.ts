@@ -7,7 +7,7 @@ declare global {
   }
 }
 
-const BOOT_COMPLETE_EVENT = 'verminoble:boot-complete';
+const BOOT_COMPLETE_EVENT = 'gwayloo:boot-complete';
 
 export function startBootLoader(): void {
   const loader = document.getElementById('loader');

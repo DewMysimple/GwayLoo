@@ -1,6 +1,6 @@
-# Verminoble
+# GwayLoo
 
-Verminoble 是一个使用 Vite、React、TypeScript 与 React Three Fiber 逐步重建的沉浸式水彩体验。迁移只替换工程实现；当前可见 UI、英文文案、字号、双阶段加载、滚动节奏、六组景观、声音行为和页面尾部均以只读原版源码为准。
+GwayLoo 是一个使用 Vite、React、TypeScript 与 React Three Fiber 逐步重建的沉浸式水彩体验。迁移只替换工程实现；当前可见 UI、英文文案、字号、双阶段加载、滚动节奏、六组景观、声音行为和页面尾部均以只读原版源码为准。
 
 订阅、赠送、邮箱、Facebook、X 和奖项文字按项目约定保留为静态展示，不导航、不打开新窗口。项目不包含 WordPress、账户、商城、支付、订阅后端、CMS 或路由。
 
