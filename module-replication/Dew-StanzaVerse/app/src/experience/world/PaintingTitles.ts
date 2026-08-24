@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { resources } from "../../core/Resources";
-import { PAPERS_CONFIG } from "../../config/papers";
+import { PAPERS_CONFIG, type PaperConfig } from "../../config/papers";
 import { paintingTitleFragmentShader, paintingTitleVertexShader } from "../../shaders/paintingTitle";
 import type { PaintingTitleConfig } from "../types";
 
@@ -50,6 +50,8 @@ export class PaintingTitles {
   private _resolution = new THREE.Vector2(window.innerWidth, window.innerHeight);
   private _renderResolution = new THREE.Vector2(window.innerWidth, window.innerHeight);
 
+  constructor(private readonly papers: readonly PaperConfig[] = PAPERS_CONFIG) {}
+
   init(gltf: GLTF): void {
     const titleProxies = gltf.scene.getObjectByName("titles");
     const font = resources.get<BmFont>("canela/font");
@@ -66,7 +68,7 @@ export class PaintingTitles {
 
     titleProxies.children.forEach((proxy) => {
       const titleName = proxy.name.split("_").join(" ").toLowerCase();
-      const paper = PAPERS_CONFIG.find((entry) => entry.title?.toLowerCase() === titleName);
+      const paper = this.papers.find((entry) => entry.title?.toLowerCase() === titleName);
       if (!paper) return;
 
       const { geometry, width } = this._createTextGeometry(font, CTA);

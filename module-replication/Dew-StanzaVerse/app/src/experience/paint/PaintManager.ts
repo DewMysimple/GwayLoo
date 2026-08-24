@@ -256,7 +256,18 @@ export class PaintManager {
     }
 
     this.sceneIndex = hit.sceneIndex;
-    this._simulation.markActive(hit.paperIndex, this._pointerDown);
+    const mobileCanPaint = this._pointerType === "mouse" || this._pointerDown;
+    const paintingMovement = !this._reducedMotion
+      && mobileCanPaint
+      && move.lengthSq() > 0.002;
+    // A raycast hit keeps the cursor in its paint state, but must not keep the
+    // fluid GPU pass alive forever when the pointer is merely resting on a
+    // paper. Refresh the source-style grace window only for real brush motion
+    // or an active press; otherwise advection/accumulation can look like an
+    // endless ripple after the pointer has stopped.
+    if (paintingMovement || this._pointerDown) {
+      this._simulation.markActive(hit.paperIndex, this._pointerDown);
+    }
     this._view.setPaintInfosIntersection(
       hit.kind === "paper" ? hit : null,
       ndcVelocity,
@@ -265,8 +276,7 @@ export class PaintManager {
         && (this._pointerType === "mouse" || this._pointerDown),
     );
     this._callbacks.onCursorChange("paint");
-    const mobileCanPaint = this._pointerType === "mouse" || this._pointerDown;
-    if (!this._reducedMotion && mobileCanPaint && move.lengthSq() > 0.002) {
+    if (paintingMovement) {
       const projectedSize = this._view.getHitProjectedSize(hit, this._view.scrollCamera.camera);
       const simulationBox = this._view.getSimulationBox(hit);
       const currentUv = this._view.mapHitUvToSimulation(hit);

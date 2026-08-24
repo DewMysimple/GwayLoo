@@ -13,6 +13,7 @@ import type { FluidSimulation } from "./FluidSimulation";
 import { bus } from "../../core/EventBus";
 import { resources } from "../../core/Resources";
 import { createRevealConfig } from "../world/InkReveal";
+import { experienceDefinition, type ExperienceDefinition } from "../definition";
 
 export const FULLPAINT_EVENTS = {
   SHOW: "fullpaint-show",
@@ -38,9 +39,11 @@ export class FullPaintManager {
   private _texOver: THREE.VideoTexture | null = null;
   private _videoFailure: { sceneIndex: number; layer: "base" | "over"; src: string } | null = null;
   private _videoFallback: { sceneIndex: number; from: "over"; to: "base" } | null = null;
+  private _definition: ExperienceDefinition;
 
-  constructor(simulation: FluidSimulation) {
+  constructor(simulation: FluidSimulation, definition: ExperienceDefinition = experienceDefinition) {
     this._simulation = simulation;
+    this._definition = definition;
 
     const noise = resources.get<THREE.Texture>("noise/rgb-generated");
     noise.wrapS = noise.wrapT = THREE.RepeatWrapping;
@@ -120,7 +123,10 @@ export class FullPaintManager {
       video.crossOrigin = "anonymous";
       video.preload = "auto";
       video.addEventListener("error", () => this._handleVideoError(sceneIndex, layer));
-      video.src = `/assets/xp/videos/${platform}/${layer}/${sceneIndex}.mp4`;
+      const scene = this._definition.scenes.find((entry) => entry.id === sceneIndex);
+      const source = scene?.videos[platform][layer];
+      if (!source) throw new Error(`Missing ${platform}/${layer} video for scene ${sceneIndex}`);
+      video.src = source;
       video.load();
       this._videoCache.set(key, video);
     }

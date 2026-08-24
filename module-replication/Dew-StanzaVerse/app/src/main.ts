@@ -12,7 +12,7 @@ import * as THREE from "three";
 import gsap from "gsap";
 import { bus, EVENTS } from "./core/EventBus";
 import { resources } from "./core/Resources";
-import { STATIC_RESOURCES } from "./config/assets";
+import { experienceDefinition } from "./experience/definition";
 import { scrollController } from "./experience/scroll/ScrollController";
 import { audioManager } from "./experience/audio/AudioManager";
 import { experienceManager } from "./experience/ExperienceManager";
@@ -112,7 +112,7 @@ if (staticDomReady && renderer && initializeRuntime(renderer)) {
 // 启动流程：资源预载 + 文字画布准备 → 构建体验模块
 async function boot(): Promise<void> {
   try {
-    await Promise.all([resources.preload(STATIC_RESOURCES), experienceManager.textCanvas.prepare()]);
+    await Promise.all([resources.preload(experienceDefinition.assets.staticResources), experienceManager.textCanvas.prepare()]);
     if (runtimeUnavailable) return;
     if (resources.hasFailures) {
       const failedNames = resources.failures.map((failure) => failure.name).join(", ");
@@ -155,6 +155,7 @@ gsap.ticker.add(() => experienceManager.syncFrame());
 if (import.meta.env.DEV) {
   (window as unknown as { __xp: unknown }).__xp = {
     experienceManager,
+    experienceDefinition,
     scrollController,
     resources,
     audioManager,

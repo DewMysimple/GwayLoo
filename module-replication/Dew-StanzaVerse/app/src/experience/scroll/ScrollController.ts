@@ -7,10 +7,10 @@
  * - 越过体验区末尾时发出 进入/离开权益区 事件
  */
 import { bus, EVENTS } from "../../core/EventBus";
-import { CAMERA_ANIMATION_DURATION } from "../../config/papers";
+import { experienceDefinition } from "../definition";
 import type { ScrollSample } from "../types";
 
-const CAMERA_TAIL_SECONDS = 10;
+const CAMERA_TAIL_SECONDS = experienceDefinition.runtime.cameraTailSeconds;
 const DAMPING_LAMBDA = 14;
 const MAX_PROGRESS_LAG = 0.015;
 const TRAVEL_MULTIPLIER = 7.5;
@@ -25,7 +25,7 @@ export class ScrollController {
   private _contentHeight = 0;
   private _effectiveTravel = 0;
   private _xpTop = 0;
-  private _duration = CAMERA_ANIMATION_DURATION;
+  private _duration = experienceDefinition.world.cameraAnimationDuration;
   private _offersShown = false;
   private _enabled = true;
   private _rawProgress = 0;

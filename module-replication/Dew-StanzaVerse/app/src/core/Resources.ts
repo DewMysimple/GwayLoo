@@ -55,7 +55,7 @@ export class Resources {
   }
 
   /** 预载一组资源，回报总进度 */
-  async preload(items: ResourceItem[]): Promise<void> {
+  async preload(items: readonly ResourceItem[]): Promise<void> {
     this._failures = [];
     let loaded = 0;
     const total = items.length;

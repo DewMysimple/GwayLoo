@@ -28,6 +28,7 @@ import { FluidSimulation } from "./paint/FluidSimulation";
 import { FullPaintManager, FULLPAINT_EVENTS } from "./paint/FullPaintManager";
 import { PaintManager } from "./paint/PaintManager";
 import type { ExperiencePhase, ExperienceState } from "./types";
+import { experienceDefinition, type ExperienceDefinition } from "./definition";
 
 type TransitionMeta = "restart" | "showPoem" | "hidePoem" | "poemToOffers" | null;
 
@@ -43,7 +44,8 @@ interface TransitionState {
 export class ExperienceManager {
   private _canvas: HTMLCanvasElement | null = null;
   private _webglApp: WebGLApp | null = null;
-  private _watercolorView = new WatercolorView();
+  private _definition: ExperienceDefinition;
+  private _watercolorView: WatercolorView;
   private _textCanvas = new TextCanvas();
   private _uiView: UIView | null = null;
   private _poemView: PoemView | null = null;
@@ -71,6 +73,11 @@ export class ExperienceManager {
     meta: null,
   };
   private _currentTimeline: gsap.core.Timeline | null = null;
+
+  constructor(definition: ExperienceDefinition = experienceDefinition) {
+    this._definition = definition;
+    this._watercolorView = new WatercolorView(definition);
+  }
 
   get fogState(): { opaque: number; occulted: number } {
     return this._fogState;
@@ -109,12 +116,12 @@ export class ExperienceManager {
   init(canvas: HTMLCanvasElement, renderer: THREE.WebGLRenderer): void {
     this._canvas = canvas;
 
-    this._simulation = new FluidSimulation(renderer);
+    this._simulation = new FluidSimulation(renderer, this._definition);
     this._watercolorView.init(this._simulation);
     this._uiView = new UIView(this._textCanvas);
     this._uiView.init();
     this._poemView = new PoemView(this._textCanvas, this._simulation);
-    this._fullPaintManager = new FullPaintManager(this._simulation);
+    this._fullPaintManager = new FullPaintManager(this._simulation, this._definition);
 
     this._webglApp = new WebGLApp({
       renderer,
@@ -386,4 +393,4 @@ export class ExperienceManager {
  * 渲染器由 main.ts 统一创建（KTX2 在资源加载前就需要 detectSupport），
  * 经 init(canvas, renderer) 传入，全程只有一个 WebGL 上下文。
  */
-export const experienceManager = new ExperienceManager();
+export const experienceManager = new ExperienceManager(experienceDefinition);

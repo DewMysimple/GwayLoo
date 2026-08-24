@@ -7,8 +7,9 @@
  * visibility state.
  */
 import gsap from "gsap";
+import { experienceDefinition, type ExperienceEffectName, type ExperienceThemeName } from "../definition";
 
-type ThemeName = "loop-main" | "loop-poem" | "loop-painting";
+type ThemeName = ExperienceThemeName;
 
 const FADE_DURATION = 0.8;
 const THEME_VOLUME = 1;
@@ -24,7 +25,8 @@ export class AudioManager {
   private _revealCall: gsap.core.Tween | null = null;
 
   init(): void {
-    (["loop-main", "loop-poem", "loop-painting"] as ThemeName[]).forEach((name) => {
+    experienceDefinition.sounds.filter((sound) => sound.kind === "theme").forEach((sound) => {
+      const name = sound.name as ThemeName;
       const el = document.querySelector<HTMLAudioElement>(`.xp-assets .${name}`);
       if (!el) return;
       el.volume = 0;
@@ -32,7 +34,8 @@ export class AudioManager {
       el.preload = "auto";
       this._themes.set(name, el);
     });
-    (["over-cta-back", "over-cta-painting"] as const).forEach((name) => {
+    experienceDefinition.sounds.filter((sound) => sound.kind === "effect").forEach((sound) => {
+      const name = sound.name;
       const el = document.querySelector<HTMLAudioElement>(`.xp-assets .${name}`);
       if (el) this._sfx.set(name, el);
     });
@@ -102,7 +105,7 @@ export class AudioManager {
     if (next && !this._muted && this._unlocked && !this._pageHidden) void this._playCurrent(false);
   }
 
-  playSfx(name: "over-cta-back" | "over-cta-painting"): void {
+  playSfx(name: ExperienceEffectName): void {
     if (this._muted || !this._unlocked || this._pageHidden) return;
     const el = this._sfx.get(name);
     if (!el) return;

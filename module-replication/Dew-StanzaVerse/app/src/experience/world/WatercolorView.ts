@@ -17,11 +17,9 @@ import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { resources } from "../../core/Resources";
 import type { LutData } from "../../core/Resources";
 import {
-  PAPERS_CONFIG,
-  GROUND_ATLAS,
-  PAPER_REVEAL_TIMING,
   type PaperConfig,
 } from "../../config/papers";
+import { experienceDefinition, type ExperienceDefinition } from "../definition";
 import { paperVertexShader, paperFragmentShader } from "../../shaders/paper";
 import { groundVertexShader, groundFragmentShader } from "../../shaders/ground";
 import { ScrollCamera } from "./ScrollCamera";
@@ -37,7 +35,6 @@ import { GrassLayer } from "./GrassLayer";
 import { ShadowProjection } from "./ShadowProjection";
 import { CutoutShadowLayer, type CutoutShadowSource } from "./CutoutShadowLayer";
 import { GlobalGroundLayer } from "./GlobalGroundLayer";
-import { IS_MOBILE } from "../../config/assets";
 
 interface SdfEntry {
   pixelSize: { x: number; y: number };
@@ -87,7 +84,7 @@ interface GroundEntry {
 export class WatercolorView {
   scene = new THREE.Scene();
   scrollCamera = new ScrollCamera();
-  paintingTitles = new PaintingTitles();
+  paintingTitles: PaintingTitles;
   grassLayer = new GrassLayer();
   shadowProjection = new ShadowProjection();
   cutoutShadow = new CutoutShadowLayer();
@@ -124,6 +121,25 @@ export class WatercolorView {
   private _groundSimulationBoxes = new Map<number, THREE.Vector4>();
   private _time = 0;
 
+  private _definition: ExperienceDefinition;
+
+  constructor(definition: ExperienceDefinition = experienceDefinition) {
+    this._definition = definition;
+    this.paintingTitles = new PaintingTitles(definition.world.papers);
+  }
+
+  private get _papers(): readonly PaperConfig[] {
+    return this._definition.world.papers;
+  }
+
+  private get _isMobile(): boolean {
+    return this._definition.assets.device === "mobile";
+  }
+
+  private get _revealTiming() {
+    return this._definition.world.revealTiming;
+  }
+
   init(simulation: FluidSimulation): void {
     this._simulation = simulation;
     const gltf = resources.get<GLTF>("watercolor/scene");
@@ -141,7 +157,7 @@ export class WatercolorView {
     this.scene.add(this.grassLayer.group);
     // Source F3 owns one global particle renderer (1024 instances + 32×32
     // position pass), rather than one simplified Points cloud per paper.
-    this._leavesLayer = new LeavesLayer(this.scene, PAPERS_CONFIG);
+    this._leavesLayer = new LeavesLayer(this.scene, this._papers);
 
     // 共享纹理
     const atlasTexture = resources.get<THREE.Texture>("atlas/texture");
@@ -171,7 +187,7 @@ export class WatercolorView {
     // derives the other from the viewport ratio. In portrait this means a
     // fixed 512px height, not a fixed width; preserving that orientation is
     // required for the full-paint UV and video cover to agree on mobile.
-    const fullScreenSize = IS_MOBILE ? 512 : 1024;
+    const fullScreenSize = this._isMobile ? 512 : 1024;
     const viewportRatio = window.innerWidth / Math.max(window.innerHeight, 1);
     const fullScreenWidth = viewportRatio > 1
       ? fullScreenSize
@@ -179,7 +195,7 @@ export class WatercolorView {
     const fullScreenHeight = viewportRatio > 1
       ? Math.max(64, Math.round(fullScreenSize / viewportRatio))
       : fullScreenSize;
-    const paperRegionInputs: SimulationRegionInput[] = PAPERS_CONFIG.map((config, index) => {
+    const paperRegionInputs: SimulationRegionInput[] = this._papers.map((config, index) => {
       const mesh = gltf.scene.getObjectByName(config.name) as THREE.Mesh | undefined;
       if (!mesh?.isMesh) return { paperIndex: index, width: 1, height: 1 };
       mesh.geometry.computeBoundingBox();
@@ -191,7 +207,7 @@ export class WatercolorView {
       // The source creates one additional instance for FullPaint. Keeping it
       // in the same packed atlas preserves the same pass chain while isolating
       // full-screen strokes from the selected paper's local paint history.
-      paperIndex: PAPERS_CONFIG.length,
+      paperIndex: this._papers.length,
       width: fullScreenWidth,
       height: fullScreenHeight,
       resolution: { width: fullScreenWidth, height: fullScreenHeight },
@@ -199,7 +215,7 @@ export class WatercolorView {
 
     // GLB meshes remain hidden authoring proxies. The visible papers are built
     // below from the source's single subdivided plane and instance matrices.
-    PAPERS_CONFIG.forEach((config, index) => {
+    this._papers.forEach((config, index) => {
       const mesh = gltf.scene.getObjectByName(config.name) as THREE.Mesh | undefined;
       if (!mesh || !(mesh as THREE.Mesh).isMesh) {
         console.warn(`[WatercolorView] GLB 中找不到网格: ${config.name}`);
@@ -612,7 +628,7 @@ export class WatercolorView {
 
   /** Exposes the active reveal profile to deterministic browser QA. */
   getRevealTiming() {
-    return { ...PAPER_REVEAL_TIMING };
+    return { ...this._revealTiming };
   }
 
   private _reveal(paper: PaperEntry): void {
@@ -632,21 +648,21 @@ export class WatercolorView {
       tl.fromTo(
         paper.state,
         { curve: 0 },
-        { curve: 1, duration: PAPER_REVEAL_TIMING.curveSeconds, ease: "quart.out" },
+        { curve: 1, duration: this._revealTiming.curveSeconds, ease: "quart.out" },
         0,
       );
       tl.fromTo(
         paper.state,
         { rotationZ: -Math.PI / 2 },
-        { rotationZ: 0, duration: PAPER_REVEAL_TIMING.riseSeconds, ease: "back.out" },
+        { rotationZ: 0, duration: this._revealTiming.riseSeconds, ease: "back.out" },
         0,
       );
     }
     tl.to(
       paper.state,
       {
-        reveal: PAPER_REVEAL_TIMING.revealProgressMax,
-        duration: PAPER_REVEAL_TIMING.revealSeconds,
+        reveal: this._revealTiming.revealProgressMax,
+        duration: this._revealTiming.revealSeconds,
         ease: "none",
       },
       0,
@@ -737,7 +753,7 @@ export class WatercolorView {
       // Branch delivery keeps the accepted ordinary-layer edge catch-up. The
       // source profile sets this to zero, making the extra path a no-op while
       // retaining one shader/material contract for both comparison modes.
-      uCompleteLayerBaseline: { value: PAPER_REVEAL_TIMING.completeLayerBaseline },
+      uCompleteLayerBaseline: { value: this._revealTiming.completeLayerBaseline },
       uNormalMapTexture: { value: normalTexture },
       uLighting: { value: {
         // Exact source Background component values (u5), merged into Paper
@@ -784,7 +800,7 @@ export class WatercolorView {
     paperMesh: THREE.Mesh,
     paperIndex: number,
   ): void {
-    const atlasEntry = GROUND_ATLAS.find((g) => g.name === config.ground.texture)!;
+    const atlasEntry = this._definition.world.groundAtlas.find((g) => g.name === config.ground.texture)!;
     paperMesh.geometry.computeBoundingBox();
     const sourceSize = paperMesh.geometry.boundingBox!.getSize(new THREE.Vector3());
     // Exact production _computeSizes(): source geometry uses Z as its paper width.

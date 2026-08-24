@@ -33,7 +33,7 @@ export class LeavesLayer {
   readonly enabled = !IS_MOBILE;
 
   private _scene: THREE.Scene;
-  private _papers: PaperConfig[];
+  private _papers: readonly PaperConfig[];
   private _mesh: THREE.InstancedMesh | null = null;
   private _material: THREE.ShaderMaterial | null = null;
   private _positionScene: THREE.Scene | null = null;
@@ -50,7 +50,7 @@ export class LeavesLayer {
   private _time = 0;
   private _colors = new Map<number, THREE.Color>();
 
-  constructor(scene: THREE.Scene, papers: PaperConfig[]) {
+  constructor(scene: THREE.Scene, papers: readonly PaperConfig[]) {
     this._scene = scene;
     this._papers = papers;
     if (!this.enabled) return;

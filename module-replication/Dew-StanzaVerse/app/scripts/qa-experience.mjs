@@ -3,7 +3,7 @@ import { dirname, resolve } from "node:path";
 
 const baseUrl = process.argv[2] ?? "http://127.0.0.1:3000/";
 const outputRoot = resolve(process.argv[3] ?? ".artifacts/qa/layer-timing-2026-08-21");
-const CDP_PORT = 9333;
+const CDP_PORT = Number(process.env.CDP_PORT ?? 9333);
 const viewports = [
   { name: "desktop-1440x900", width: 1440, height: 900, mobile: false },
   { name: "desktop-1920x1080", width: 1920, height: 1080, mobile: false },
@@ -109,6 +109,7 @@ for (const viewport of viewports) {
   const fluidPassState = await evaluate(`(()=>{const manager=window.__xp.experienceManager;const simulation=manager._simulation;const divergence=simulation?._divergenceMat?.fragmentShader??'';const advection=simulation?._advect?.fragmentShader??'';const splat=simulation?._splat?.fragmentShader??'';const fullPaintShader=manager._fullPaintManager?._material?.fragmentShader??'';const states=[...(simulation?._states?.values?.()??[])];const dtScaling=states.length>0&&states.every(state=>Math.abs(state.dt-.008*state.fboSize.x/simulation.atlasSize)<.000001);return {divergenceUsesDt:divergence.includes('* 0.5 / max(vDt, 0.000001)'),divergenceUsesSingleCell:!divergence.includes('uTexelSize.x * 2.0')&&!divergence.includes('uTexelSize.y * 2.0'),advectionUsesV2:advection.includes('spotOld2')&&advection.includes('spotNew3')&&advection.includes('noise2.r * 3.0')&&advection.includes('vDt * ratio'),splatUsesSourceEllipse:splat.includes('sdEllipse')&&splat.includes('uCurrentRadius')&&splat.includes('vWasActive < 0.5')&&!splat.includes('sdUnevenCapsule'),dtScaling,fullPaintSourceAlpha:fullPaintShader.includes('gl_FragColor = inkColor;')&&!fullPaintShader.includes('inkColor.a * uAlpha')};})()`);
   const fluidStencilState = await evaluate(`(()=>{const simulation=window.__xp.experienceManager._simulation;const geometry=simulation?._mesh?.geometry;const states=[...(simulation?._states?.values?.()??[])];return {stencilTargets:[simulation?._velocityA,simulation?._velocityB,simulation?._pressureA,simulation?._pressureB,simulation?._divergence,simulation?._accumulationA,simulation?._accumulationB].every(target=>target?.stencilBuffer===true),stencilMesh:!!simulation?._stencilMesh,stencilActiveAttribute:!!geometry?.getAttribute?.('aStencilActive'),fourFrameHistory:states.length>0&&states.every(state=>['wasActive','wasActive2','wasActive3','wasActive4'].every(key=>typeof state[key]==='boolean'))};})()`);
   const fluidActivityState = await evaluate(`(()=>{const simulation=window.__xp.experienceManager._simulation;const state=simulation?._states?.get?.(0);if(!state)return null;simulation.reset();simulation.markActive(0,false);const marked=state.active;simulation._activeUntil.set(0,performance.now()-1);simulation.update(1/60);const expired=!state.active;simulation.setFullPaintActive(true,false);const full=simulation._states.get(simulation.fullPaintPaperIndex);const fullActive=!!full?.active;const ordinarySuppressed=[...simulation._states.values()].filter(entry=>entry.paperIndex!==simulation.fullPaintPaperIndex).every(entry=>!entry.active);simulation.setFullPaintActive(false);simulation.reset();return {marked,expired,fullActive,ordinarySuppressed};})()`);
+  const idleHoverState = await evaluate(`(async()=>{const simulation=window.__xp.experienceManager._simulation;const paint=window.__xp.experienceManager._paintManager;simulation.reset();let movementCalls=0;let idleCalls=0;let idlePhase=false;const original=simulation.markActive.bind(simulation);simulation.markActive=(paperIndex,pressed)=>{if(idlePhase)idleCalls++;else movementCalls++;return original(paperIndex,pressed)};try{const y=${viewport.height}*.48;const x0=${viewport.width}*.23;const x1=${viewport.width}*.60;window.dispatchEvent(new PointerEvent('pointermove',{clientX:x0,clientY:y,pointerType:'mouse',bubbles:true}));await new Promise(r=>setTimeout(r,180));window.dispatchEvent(new PointerEvent('pointermove',{clientX:x1,clientY:y,pointerType:'mouse',bubbles:true}));await new Promise(r=>setTimeout(r,850));idlePhase=true;await new Promise(r=>setTimeout(r,500));return {movementCalls,idleCalls,brushSample:!!paint.lastBrushSample,idleDoesNotRefresh:idleCalls===0};}finally{simulation.markActive=original;simulation.reset();}})()`);
 
   const scrollResponse = await evaluate(`(async()=>{const samples=[];window.__xp.scrollController.scrollToCameraTime(24);for(let i=0;i<22;i++){await new Promise(requestAnimationFrame);const s=window.__xp.scrollController.sample;samples.push({t:performance.now(),raw:s.rawProgress,damped:s.dampedProgress});}window.__xp.scrollController.scrollToTop();await new Promise(r=>setTimeout(r,450));return {samples,maxLag:Math.max(...samples.map(s=>Math.abs(s.raw-s.damped))),firstFrameMoved:samples.findIndex(s=>s.damped>0),settledLag:Math.abs(samples.at(-1).raw-samples.at(-1).damped)};})()`);
 
@@ -199,7 +200,7 @@ for (const viewport of viewports) {
   const restartY = await evaluate("window.scrollY");
   await screenshot(resolve(caseDir, "80-restart.png"));
 
-  cases.push({ ...viewport, layerState, cursorState, cameraState, leavesState, leavesLifecycle, fullPaintLifecycle, uvMapping, layerDurations, groundLifecycle, cutoutLifecycle, renderResolution, sourceMaterialState, backgroundCompositeState, globalGroundState, fluidPassState, fluidStencilState, fluidActivityState, scrollStep, scrollResponse, rippleScene, smallBrushSample, largeBrushSample, brushSample, brushSlowMotion, brushMotion, grassLifecycle, slowMotion, timings, titleClick, fullPaintVisible, fullPaintState, poemOpening, poemHiding, poemClosed, fullPaintSoftFailure, fullPaintFailure, finalSlot, restartY });
+  cases.push({ ...viewport, layerState, cursorState, cameraState, leavesState, leavesLifecycle, fullPaintLifecycle, uvMapping, layerDurations, groundLifecycle, cutoutLifecycle, renderResolution, sourceMaterialState, backgroundCompositeState, globalGroundState, fluidPassState, fluidStencilState, fluidActivityState, idleHoverState, scrollStep, scrollResponse, rippleScene, smallBrushSample, largeBrushSample, brushSample, brushSlowMotion, brushMotion, grassLifecycle, slowMotion, timings, titleClick, fullPaintVisible, fullPaintState, poemOpening, poemHiding, poemClosed, fullPaintSoftFailure, fullPaintFailure, finalSlot, restartY });
 }
 
 // The shipped route keeps the accepted delivery timing. Run one browser pass
@@ -448,6 +449,9 @@ const report = {
       && testCase.fluidActivityState?.expired
       && testCase.fluidActivityState?.fullActive
       && testCase.fluidActivityState?.ordinarySuppressed
+      && testCase.idleHoverState?.movementCalls > 0
+      && testCase.idleHoverState?.brushSample
+      && testCase.idleHoverState?.idleDoesNotRefresh
       && testCase.timings.every(entry => entry.sample.travelMultiplier === 7.5)
       // Wider layouts carry a taller content slot, so the same 100 px probe
       // advances slightly less camera time while retaining the same lag cap.
