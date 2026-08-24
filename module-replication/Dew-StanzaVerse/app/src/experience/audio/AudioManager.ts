@@ -177,6 +177,7 @@ export class AudioManager {
     const toggle = document.getElementById("sound-toggle");
     toggle?.classList.toggle("is-off", this._muted);
     toggle?.setAttribute("aria-pressed", String(!this._muted));
+    toggle?.setAttribute("aria-label", this._muted ? experienceDefinition.copy.soundOn : experienceDefinition.copy.soundOff);
   }
 }
 

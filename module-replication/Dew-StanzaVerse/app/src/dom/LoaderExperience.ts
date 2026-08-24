@@ -9,10 +9,12 @@
 import gsap from "gsap";
 import { bus, EVENTS } from "../core/EventBus";
 import { audioManager } from "../experience/audio/AudioManager";
+import { experienceDefinition, type ExperienceDefinition } from "../experience/definition";
 
 const CIRCUMFERENCE = 290;
 
 export class LoaderExperience {
+  private _definition: ExperienceDefinition;
   private _el: HTMLElement | null = null;
   private _middle: HTMLElement | null = null;
   private _text: HTMLElement | null = null;
@@ -21,12 +23,18 @@ export class LoaderExperience {
   private _ready = false;
   private _entered = false;
 
+  constructor(definition: ExperienceDefinition = experienceDefinition) {
+    this._definition = definition;
+  }
+
   init(): void {
     this._el = document.getElementById("loader");
     if (!this._el) return;
     this._middle = this._el.querySelector(".middle-w");
     this._text = this._el.querySelector(".loading-text");
     this._description = this._el.querySelector(".enter-description");
+    if (this._text) this._text.textContent = this._definition.copy.loading;
+    if (this._description) this._description.textContent = this._definition.copy.intro;
 
     // 注入双圆环（对应原站 .loader-circle / .static-circle / .animated-circle）
     const svgNS = "http://www.w3.org/2000/svg";
@@ -108,4 +116,4 @@ export class LoaderExperience {
   }
 }
 
-export const loaderExperience = new LoaderExperience();
+export const loaderExperience = new LoaderExperience(experienceDefinition);

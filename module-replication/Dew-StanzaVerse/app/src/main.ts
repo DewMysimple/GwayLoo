@@ -20,6 +20,7 @@ import { loaderExperience } from "./dom/LoaderExperience";
 import { cursor } from "./dom/Cursor";
 import { advantages } from "./dom/Advantages";
 import { debugController } from "./dom/DebugController";
+import { contentDefinitionAdapter } from "./dom/ContentDefinitionAdapter";
 
 /** 移动端 100vh 修正（与原站 --vh 约定一致） */
 function setVhVar(): void {
@@ -46,6 +47,7 @@ function activateFallback(reason: string): void {
 // branch so FAQ and the fallback Restart path do not depend on the canvas.
 let staticDomReady = true;
 try {
+  contentDefinitionAdapter.apply(experienceDefinition);
   advantages.init();
 } catch (error) {
   staticDomReady = false;

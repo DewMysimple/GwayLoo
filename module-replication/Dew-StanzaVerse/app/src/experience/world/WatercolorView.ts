@@ -125,7 +125,7 @@ export class WatercolorView {
 
   constructor(definition: ExperienceDefinition = experienceDefinition) {
     this._definition = definition;
-    this.paintingTitles = new PaintingTitles(definition.world.papers);
+    this.paintingTitles = new PaintingTitles(definition.world.papers, definition.copy.landscapeCta);
   }
 
   private get _papers(): readonly PaperConfig[] {

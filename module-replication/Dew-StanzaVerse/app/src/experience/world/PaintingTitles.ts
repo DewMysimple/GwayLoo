@@ -4,6 +4,7 @@ import { resources } from "../../core/Resources";
 import { PAPERS_CONFIG, type PaperConfig } from "../../config/papers";
 import { paintingTitleFragmentShader, paintingTitleVertexShader } from "../../shaders/paintingTitle";
 import type { PaintingTitleConfig } from "../types";
+import { experienceDefinition } from "../definition";
 
 interface FontChar {
   id: number;
@@ -36,7 +37,6 @@ interface RuntimeTitle {
   textWidth: number;
 }
 
-const CTA = "Open the landscape";
 // bmfont geometry is expressed in atlas pixels; this matches the source's
 // stable, small editorial label after its text-layout normalization.
 const SOURCE_SCALE = 0.12 / 1600;
@@ -50,7 +50,10 @@ export class PaintingTitles {
   private _resolution = new THREE.Vector2(window.innerWidth, window.innerHeight);
   private _renderResolution = new THREE.Vector2(window.innerWidth, window.innerHeight);
 
-  constructor(private readonly papers: readonly PaperConfig[] = PAPERS_CONFIG) {}
+  constructor(
+    private readonly papers: readonly PaperConfig[] = PAPERS_CONFIG,
+    private readonly cta = experienceDefinition.copy.landscapeCta,
+  ) {}
 
   init(gltf: GLTF): void {
     const titleProxies = gltf.scene.getObjectByName("titles");
@@ -71,7 +74,7 @@ export class PaintingTitles {
       const paper = this.papers.find((entry) => entry.title?.toLowerCase() === titleName);
       if (!paper) return;
 
-      const { geometry, width } = this._createTextGeometry(font, CTA);
+      const { geometry, width } = this._createTextGeometry(font, this.cta);
       const material = new THREE.ShaderMaterial({
         vertexShader: paintingTitleVertexShader,
         fragmentShader: paintingTitleFragmentShader,
@@ -123,7 +126,7 @@ export class PaintingTitles {
         proxy,
         worldPosition: root.position.clone(),
         worldQuaternion: root.quaternion.clone(),
-        cta: paper.cta ?? CTA,
+        cta: paper.cta ?? this.cta,
         sceneIndex: paper.sceneIndex,
         interactionBounds: new THREE.Box2(),
       };

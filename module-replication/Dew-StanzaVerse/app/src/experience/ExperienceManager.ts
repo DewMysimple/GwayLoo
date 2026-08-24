@@ -49,7 +49,7 @@ export class ExperienceManager {
   private _webglApp: WebGLApp | null = null;
   private _definition: ExperienceDefinition;
   private _watercolorView: WatercolorView;
-  private _textCanvas = new TextCanvas();
+  private _textCanvas: TextCanvas;
   private _uiView: UIView | null = null;
   private _poemView: PoemView | null = null;
   private _simulation: FluidSimulation | null = null;
@@ -90,6 +90,7 @@ export class ExperienceManager {
       sceneStarts: definition.scenes.map((scene) => scene.focusTime / definition.world.cameraAnimationDuration),
       poemBreakpoints: definition.runtime.poemBreakpoints,
     };
+    this._textCanvas = new TextCanvas(definition);
     this._state.runtime = this._runtimeState;
     this._watercolorView = new WatercolorView(definition);
     bus.on(EVENTS.RESOURCES_PROGRESS, (payload) => {

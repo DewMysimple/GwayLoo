@@ -11,6 +11,7 @@
  */
 import * as THREE from "three";
 import { resources } from "../../core/Resources";
+import { experienceDefinition, type ExperienceDefinition } from "../definition";
 
 const TILE_PADDING = 24;
 
@@ -78,6 +79,11 @@ export interface TextCanvasBox {
 
 export class TextCanvas {
   texture: THREE.CanvasTexture | null = null;
+  private _fontFamily: string;
+
+  constructor(definition: ExperienceDefinition = experienceDefinition) {
+    this._fontFamily = definition.fonts.canelaThin.family;
+  }
 
   /** 原始 AK 的 Poem 纹理与固定 hK 布局；主滚动页仍使用上面的 DOM 纹理。 */
   get poemTexture(): THREE.Texture | null {
@@ -127,7 +133,7 @@ export class TextCanvas {
   /** 等字体就绪后绘制 */
   async prepare(): Promise<void> {
     const fontSize = window.innerWidth < 768 ? 25 : 30;
-    await document.fonts.load(`100 ${fontSize}px "Canela Text"`);
+    await document.fonts.load(`100 ${fontSize}px "${this._fontFamily}"`);
     await document.fonts.ready;
     this._render();
   }
@@ -189,7 +195,7 @@ export class TextCanvas {
     const lineHeight = this._mobile ? 40 : 48;
     // 测量
     const measurer = document.createElement("canvas").getContext("2d")!;
-    measurer.font = `100 ${fontSize}px "Canela Text"`;
+    measurer.font = `100 ${fontSize}px "${this._fontFamily}"`;
     let maxWidth = 0;
     let totalLines = 0;
     this.sectionRanges = [];
@@ -234,7 +240,7 @@ export class TextCanvas {
       ctx.scale(dpr, dpr);
       ctx.translate(tileIndex * this.tileWidth, 0);
       ctx.filter = blur > 0 ? `blur(${blur}px)` : "none";
-      ctx.font = `100 ${fontSize}px "Canela Text"`;
+      ctx.font = `100 ${fontSize}px "${this._fontFamily}"`;
       ctx.fillStyle = "#000";
       ctx.textBaseline = "top";
       let y = TILE_PADDING;

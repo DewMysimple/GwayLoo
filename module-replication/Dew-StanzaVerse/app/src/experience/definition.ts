@@ -8,6 +8,9 @@
  * wiring boundary, not a visual-parameter rewrite.
  */
 import type { ResourceItem } from "../core/Resources";
+import { experienceCopy } from "../content/experience";
+import { fontAssets } from "../content/fonts";
+import { tailCopy } from "../content/tail";
 import { IS_MOBILE, STATIC_RESOURCES, VIDEO_RESOURCES } from "../config/assets";
 import {
   CAMERA_ANIMATION_DURATION,
@@ -39,6 +42,9 @@ export interface SoundDefinition {
 }
 
 export interface ExperienceDefinition {
+  copy: typeof experienceCopy;
+  fonts: typeof fontAssets;
+  tail: typeof tailCopy;
   assets: {
     staticResources: readonly ResourceItem[];
     videoResources: readonly ResourceItem[];
@@ -83,6 +89,9 @@ function createScene(id: SceneId): SceneDefinition {
 }
 
 export const experienceDefinition: ExperienceDefinition = {
+  copy: experienceCopy,
+  fonts: fontAssets,
+  tail: tailCopy,
   assets: {
     staticResources: STATIC_RESOURCES,
     videoResources: VIDEO_RESOURCES,
