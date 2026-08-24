@@ -48,6 +48,7 @@ export const staticResources: readonly ResourceItem[] = [
   { type: "texture", path: worldAssets.rgbNoise, name: "noise/rgb-fractal" },
   { type: "texture", path: worldAssets.greyscaleNoise, name: "noise/greyscale-fractal" },
   { type: "texture", path: worldAssets.compressedRgbNoise, name: "noise/rgb-generated" },
+  { type: "texture", path: worldAssets.rgbaNoise, name: "noise/rgba-pixel" },
   { type: "ktx", path: worldAssets.groundAtlas, name: "watercolor/ground" },
   { type: "texture", path: worldAssets.grassAtlas, name: "grass/blade-atlas" },
   { type: "texture", path: worldAssets.grassGradients, name: "grass/color-gradients" },

@@ -23,6 +23,7 @@ supersedes: null
 | 2026-08-25 | feature | - | archived | main-world-assets-definition-migration-and-five-viewport-qa | [[日志/2026-08-25-主工程World资源定义迁移与QA.md|主工程 World 资源定义迁移与五视口 QA]] |
 | 2026-08-25 | feature | - | archived | main-scene-metadata-definition-and-five-viewport-qa | [[日志/2026-08-25-主工程SceneMetadata迁移与QA.md|主工程 Scene Metadata 迁移与五视口 QA]] |
 | 2026-08-25 | feature | - | archived | main-definition-boundary-and-idle-fluid-lifecycle | [[日志/2026-08-25-主工程Definition边界迁移与空闲悬停流体修正.md|主工程 Definition 边界迁移与空闲悬停流体修正]] |
+| 2026-08-25 | feature | - | archived | main-atlas-and-rgba-noise-resource-boundary | [[日志/2026-08-25-主工程Atlas与RGBA噪声资源边界迁移及QA.md|主工程 Atlas 与 RGBA Noise 资源边界迁移及 QA]] |
 | 2026-08-25 | feature | - | archived | ground-instanced-batch-and-reveal-state-verification | [[日志/2026-08-25-Ground实例批次与Reveal状态验证.md|Ground 实例批次与 Reveal 状态验证]] |
 | 2026-08-25 | feature | - | archived | cutout-shadow-layer-reconstruction | [[日志/2026-08-25-Cutouts独立SDF阴影层重建与浏览器QA.md|Cutouts 独立 SDF 阴影层重建与浏览器 QA]] |
 | 2026-08-24 | bug | - | archived | fallback-static-interaction-boundary | [[日志/2026-08-24-降级页面静态交互边界.md|降级页面静态交互边界]] |

@@ -8,6 +8,7 @@
  * wiring boundary, not a visual-parameter rewrite.
  */
 import type { ResourceItem } from "../core/Resources";
+import { watercolorAtlas } from "../content/atlas";
 import { experienceCopy } from "../content/experience";
 import { fontAssets } from "../content/fonts";
 import { tailCopy } from "../content/tail";
@@ -57,6 +58,7 @@ export interface ExperienceDefinition {
   sounds: readonly SoundDefinition[];
   world: {
     assets: typeof worldAssets;
+    atlas: typeof watercolorAtlas;
     papers: readonly PaperConfig[];
     groundAtlas: typeof GROUND_ATLAS;
     revealTiming: PaperRevealTiming;
@@ -123,6 +125,7 @@ export const experienceDefinition: ExperienceDefinition = {
   ],
   world: {
     assets: worldAssets,
+    atlas: watercolorAtlas,
     papers: PAPERS_CONFIG,
     groundAtlas: GROUND_ATLAS,
     revealTiming: PAPER_REVEAL_TIMING,

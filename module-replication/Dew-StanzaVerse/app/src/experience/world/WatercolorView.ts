@@ -16,6 +16,7 @@ import gsap from "gsap";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { resources } from "../../core/Resources";
 import type { LutData } from "../../core/Resources";
+import type { AtlasSdfEntry, AtlasTextureEntry } from "../../content/atlas";
 import {
   type PaperConfig,
 } from "../../config/papers";
@@ -26,8 +27,6 @@ import { ScrollCamera } from "./ScrollCamera";
 import { LeavesLayer } from "./LeavesLayer";
 import type { FluidSimulation } from "../paint/FluidSimulation";
 import { scrollController } from "../scroll/ScrollController";
-import atlasSdfJson from "../../config/atlas-sdf.json";
-import atlasTextureJson from "../../config/atlas-texture.json";
 import { createRevealConfig, getDebugOptions } from "./InkReveal";
 import type { PaperInstanceConfig, RaycastHit, RenderPipeline, SimulationRegionInput } from "../types";
 import { PaintingTitles } from "./PaintingTitles";
@@ -36,24 +35,12 @@ import { ShadowProjection } from "./ShadowProjection";
 import { CutoutShadowLayer, type CutoutShadowSource } from "./CutoutShadowLayer";
 import { GlobalGroundLayer } from "./GlobalGroundLayer";
 
-interface SdfEntry {
-  pixelSize: { x: number; y: number };
-  scale: { x: number; y: number };
-  planeSize: { x: number; y: number };
-  originSize: { x: number; y: number };
-  atlasRemap: { x: number; y: number; z: number; w: number };
-}
-
-interface TextureEntry {
-  atlasRemap: { x: number; y: number; z: number; w: number };
-}
-
 interface PreparedPaper {
   index: number;
   config: PaperConfig;
   mesh: THREE.Mesh;
-  sdfData: SdfEntry;
-  texData: TextureEntry;
+  sdfData: AtlasSdfEntry;
+  texData: AtlasTextureEntry;
   reveal: ReturnType<typeof createRevealConfig>;
   matrix: THREE.Matrix4;
   simulationBox: THREE.Vector4;
@@ -105,8 +92,8 @@ export class WatercolorView {
   papers: PaperEntry[] = [];
 
   private _simulation: FluidSimulation | null = null;
-  private _sdfMap = new Map<string, SdfEntry>(atlasSdfJson as [string, SdfEntry][]);
-  private _texMap = new Map<string, TextureEntry>(atlasTextureJson as [string, TextureEntry][]);
+  private _sdfMap: Map<string, AtlasSdfEntry>;
+  private _texMap: Map<string, AtlasTextureEntry>;
   private _paperMesh: THREE.InstancedMesh | null = null;
   private _paperMaterial: THREE.ShaderMaterial | null = null;
   private _paperUniforms: Record<string, { value: unknown }> | null = null;
@@ -125,6 +112,8 @@ export class WatercolorView {
 
   constructor(definition: ExperienceDefinition = experienceDefinition) {
     this._definition = definition;
+    this._sdfMap = new Map(definition.world.atlas.sdfEntries);
+    this._texMap = new Map(definition.world.atlas.textureEntries);
     this.paintingTitles = new PaintingTitles(definition.world.papers, definition.copy.landscapeCta);
   }
 
@@ -411,7 +400,8 @@ export class WatercolorView {
         (uniforms.uCurveCoef.value as number[])[paper.index] = paper.state.curve;
         (uniforms.uRevealProgress.value as number[])[paper.index] = paper.state.reveal;
       }
-      if (!paper.revealed && triggerTime >= paper.config.startAt) {
+      const scheduledStart = this._definition.world.atlas.layerSchedule[paper.config.name] ?? paper.config.startAt;
+      if (!paper.revealed && triggerTime >= scheduledStart) {
         this._reveal(paper);
       }
       paper.transform.rotation.z = -paper.state.rotationZ;
