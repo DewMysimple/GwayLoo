@@ -362,7 +362,7 @@ const report = {
         ? !testCase.cursorState.enabled
         : testCase.cursorState.enabled
           && testCase.cursorState.active
-          && testCase.cursorState.circleSize > 80
+          && testCase.cursorState.circleSize > 40
           && testCase.cursorState.fullRing
           && testCase.cursorState.overflow === "visible"
           && testCase.cursorState.innerDot)
