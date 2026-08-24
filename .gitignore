@@ -31,7 +31,13 @@ playwright-report/
 test-results/
 *.tsbuildinfo
 
-# Independent module-replication workspace: keep only the versioned routing docs.
+# module-replication is skipped by default; this branch explicitly tracks the
+# selected test project as ordinary files in the root repository.
 module-replication/*
 !module-replication/AGENTS.md
 !module-replication/README.md
+!module-replication/Dew-StanzaVerse/
+!module-replication/Dew-StanzaVerse/**
+
+# Keep local project launch helpers out of the root branch.
+module-replication/Dew-StanzaVerse/app/S.cmd
