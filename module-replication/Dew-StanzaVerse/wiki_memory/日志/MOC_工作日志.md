@@ -22,6 +22,7 @@ supersedes: null
 | 2026-08-25 | feature | - | archived | main-content-definition-dom-adapter-and-five-viewport-qa | [[日志/2026-08-25-主工程内容Definition与DOM适配.md|主工程内容 Definition 与 DOM 适配]] |
 | 2026-08-25 | feature | - | archived | main-world-assets-definition-migration-and-five-viewport-qa | [[日志/2026-08-25-主工程World资源定义迁移与QA.md|主工程 World 资源定义迁移与五视口 QA]] |
 | 2026-08-25 | feature | - | archived | main-scene-metadata-definition-and-five-viewport-qa | [[日志/2026-08-25-主工程SceneMetadata迁移与QA.md|主工程 Scene Metadata 迁移与五视口 QA]] |
+| 2026-08-25 | feature | - | active | runtime-contract-boundary | [[日志/2026-08-25-主工程Runtime输入选择音频契约边界迁移与QA.md|主工程 Runtime 输入、选择、音频与契约边界迁移及 QA]] |
 | 2026-08-25 | feature | - | archived | main-paper-manifest-webgl-boundary | [[日志/2026-08-25-主工程PaperManifest与WebGL职责边界迁移及QA.md|主工程 Paper Manifest 与 WebGL 职责边界迁移及 QA]] |
 | 2026-08-25 | feature | - | archived | main-definition-boundary-and-idle-fluid-lifecycle | [[日志/2026-08-25-主工程Definition边界迁移与空闲悬停流体修正.md|主工程 Definition 边界迁移与空闲悬停流体修正]] |
 | 2026-08-25 | feature | - | archived | main-atlas-and-rgba-noise-resource-boundary | [[日志/2026-08-25-主工程Atlas与RGBA噪声资源边界迁移及QA.md|主工程 Atlas 与 RGBA Noise 资源边界迁移及 QA]] |

@@ -8,12 +8,13 @@
  */
 import { bus, EVENTS } from "../../core/EventBus";
 import { experienceDefinition } from "../definition";
+import { mapScrollToTimeline } from "../runtime/input";
 import type { ScrollSample } from "../types";
 
 const CAMERA_TAIL_SECONDS = experienceDefinition.runtime.cameraTailSeconds;
 const DAMPING_LAMBDA = 14;
 const MAX_PROGRESS_LAG = 0.015;
-const TRAVEL_MULTIPLIER = 7.5;
+const TRAVEL_MULTIPLIER = experienceDefinition.runtime.travelMultiplier;
 
 export class ScrollController {
   /** 平滑后的滚动位置（px） */
@@ -93,13 +94,12 @@ export class ScrollController {
 
   update(delta = 1 / 60): void {
     this.target = window.scrollY;
-    const localScroll = Math.max(0, this.target - this._xpTop);
-    const sectionProgress = localScroll / Math.max(this._xpHeight, 1);
-    const mainDuration = this._duration - CAMERA_TAIL_SECONDS;
-    const rawCameraTime = sectionProgress <= 1
-      ? Math.min(sectionProgress, 1) * mainDuration
-      : mainDuration + Math.min(sectionProgress - 1, 1) * CAMERA_TAIL_SECONDS;
-    const nextRaw = Math.min(Math.max(rawCameraTime / this._duration, 0), 1);
+    const timeline = mapScrollToTimeline(this.target, this._xpTop, {
+      cameraAnimationDuration: this._duration,
+      cameraTailSeconds: CAMERA_TAIL_SECONDS,
+      sectionHeight: this._xpHeight,
+    });
+    const nextRaw = timeline.progress;
     const previousRaw = this._rawProgress;
     this._rawProgress = nextRaw;
 

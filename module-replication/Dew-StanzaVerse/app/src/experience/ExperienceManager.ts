@@ -29,7 +29,9 @@ import { FullPaintManager, FULLPAINT_EVENTS } from "./paint/FullPaintManager";
 import { PaintManager } from "./paint/PaintManager";
 import type { ExperiencePhase, ExperienceState } from "./types";
 import { experienceDefinition, type ExperienceDefinition } from "./definition";
-import { createInitialRuntimeState, experienceRuntimeReducer, type RuntimeReducerConfig } from "./runtime/reducer";
+import { createInitialRuntimeState, experienceRuntimeReducer } from "./runtime/reducer";
+import { createRuntimeContract, type RuntimeContract } from "./runtime/contract";
+import { themeForAudioMode } from "./runtime/audio";
 import type { ExperienceRuntimeAction, ExperienceRuntimeState } from "./runtime/types";
 import { detectPerformanceTier } from "./runtime/performance";
 
@@ -61,9 +63,11 @@ export class ExperienceManager {
   private _isOverPoem = false;
   private _fogState = { opaque: 0, occulted: 0 };
   private _runtimeState: ExperienceRuntimeState = createInitialRuntimeState("high");
-  private _runtimeConfig: RuntimeReducerConfig = {
+  private _runtimeConfig: RuntimeContract = {
     sceneStarts: [],
     poemBreakpoints: [0.32, 0.62],
+    cameraTailSeconds: 0,
+    travelMultiplier: 0,
   };
   private _state: ExperienceState = {
     phase: "loading",
@@ -86,10 +90,7 @@ export class ExperienceManager {
   constructor(definition: ExperienceDefinition = experienceDefinition) {
     this._definition = definition;
     this._runtimeState = createInitialRuntimeState(detectPerformanceTier());
-    this._runtimeConfig = {
-      sceneStarts: definition.scenes.map((scene) => scene.focusTime / definition.world.cameraAnimationDuration),
-      poemBreakpoints: definition.runtime.poemBreakpoints,
-    };
+    this._runtimeConfig = createRuntimeContract(definition);
     this._textCanvas = new TextCanvas(definition);
     this._state.runtime = this._runtimeState;
     this._watercolorView = new WatercolorView(definition);
@@ -110,6 +111,10 @@ export class ExperienceManager {
 
   get runtimeState(): ExperienceRuntimeState {
     return this._runtimeState;
+  }
+
+  get runtimeContract(): RuntimeContract {
+    return this._runtimeConfig;
   }
 
   get textCanvas(): TextCanvas {
@@ -233,7 +238,7 @@ export class ExperienceManager {
     this._setPhase("scroll");
     this._webglApp!.start();
     this._uiView!.show();
-    audioManager.switchThemeTo("loop-main");
+    audioManager.switchThemeTo(themeForAudioMode("main"));
     audioManager.start();
 
     // 画布淡入
@@ -263,7 +268,7 @@ export class ExperienceManager {
       onComplete: () => this._emptyTransitionState(),
     });
     tl.add(this._uiView!.hide(), 0);
-    tl.add(() => audioManager.switchThemeTo("loop-poem"), 0);
+    tl.add(() => audioManager.switchThemeTo(themeForAudioMode("poem")), 0);
     tl.add(this._poemView!.show(), 0.3);
     tl.add(() => this._setPoemBackVisible(true), 0.6);
 
@@ -285,7 +290,7 @@ export class ExperienceManager {
     });
     tl.add(() => this._setPoemBackVisible(false), 0);
     tl.add(this._poemView!.hide(), 0);
-    tl.add(() => audioManager.switchThemeTo("loop-main"), 0);
+    tl.add(() => audioManager.switchThemeTo(themeForAudioMode("main")), 0);
     tl.add(this._uiView!.show(), 0.4);
 
     this._swapTimeline(tl);
