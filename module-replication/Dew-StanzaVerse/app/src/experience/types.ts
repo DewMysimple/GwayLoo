@@ -1,5 +1,5 @@
 import type * as THREE from "three";
-import type { PaperConfig } from "../config/papers";
+import type { PaperConfig } from "../content/papers";
 import type { ExperienceRuntimeState } from "./runtime/types";
 
 export type ExperiencePhase =

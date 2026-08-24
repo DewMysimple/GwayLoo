@@ -8,7 +8,7 @@
 import * as THREE from "three";
 import { resources } from "../../core/Resources";
 import { IS_MOBILE } from "../../config/assets";
-import type { PaperConfig } from "../../config/papers";
+import type { PaperConfig } from "../../content/papers";
 import type { RaycastHit } from "../types";
 import {
   leavesFragmentShader,

@@ -7,7 +7,7 @@
  */
 import atlasSdfJson from "../config/atlas-sdf.json";
 import atlasTextureJson from "../config/atlas-texture.json";
-import { PAPERS_CONFIG } from "../config/papers";
+import { paperManifest } from "./papers";
 
 export interface AtlasSdfEntry {
   pixelSize: { x: number; y: number };
@@ -32,7 +32,7 @@ const textureEntries = atlasTextureJson as unknown as AtlasEntries<AtlasTextureE
  * for consumers that need the source schedule.
  */
 export const watercolorLayerSchedule: Readonly<Record<string, number>> = Object.freeze(
-  Object.fromEntries(PAPERS_CONFIG.map((paper) => [paper.name, paper.startAt])),
+  Object.fromEntries(paperManifest.map((paper) => [paper.name, paper.startAt])),
 );
 
 export const watercolorAtlas = {

@@ -17,9 +17,7 @@ import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { resources } from "../../core/Resources";
 import type { LutData } from "../../core/Resources";
 import type { AtlasSdfEntry, AtlasTextureEntry } from "../../content/atlas";
-import {
-  type PaperConfig,
-} from "../../config/papers";
+import type { PaperConfig } from "../../content/papers";
 import { experienceDefinition, type ExperienceDefinition } from "../definition";
 import { paperVertexShader, paperFragmentShader } from "../../shaders/paper";
 import { groundVertexShader, groundFragmentShader } from "../../shaders/ground";

@@ -11,17 +11,17 @@ import type { ResourceItem } from "../core/Resources";
 import { watercolorAtlas } from "../content/atlas";
 import { experienceCopy } from "../content/experience";
 import { fontAssets } from "../content/fonts";
-import { tailCopy } from "../content/tail";
-import { createVideoResources, detectWorldDevice, staticResources, worldAssets } from "../content/world";
 import {
   CAMERA_ANIMATION_DURATION,
   CAMERA_SCROLL_END,
   GROUND_ATLAS,
   PAPER_REVEAL_TIMING,
-  PAPERS_CONFIG,
+  paperManifest,
   type PaperConfig,
   type PaperRevealTiming,
-} from "../config/papers";
+} from "../content/papers";
+import { tailCopy } from "../content/tail";
+import { createVideoResources, detectWorldDevice, staticResources, worldAssets } from "../content/world";
 
 export type DeviceKind = "desktop" | "mobile";
 export type VideoLayer = "base" | "over";
@@ -126,7 +126,7 @@ export const experienceDefinition: ExperienceDefinition = {
   world: {
     assets: worldAssets,
     atlas: watercolorAtlas,
-    papers: PAPERS_CONFIG,
+    papers: paperManifest,
     groundAtlas: GROUND_ATLAS,
     revealTiming: PAPER_REVEAL_TIMING,
     cameraAnimationDuration: CAMERA_ANIMATION_DURATION,

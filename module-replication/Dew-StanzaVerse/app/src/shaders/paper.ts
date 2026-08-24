@@ -12,7 +12,7 @@
  * - 三态雾
  */
 import { GLSL_UTILS, GLSL_FOG, GLSL_INK_REVEAL } from "./chunks";
-import { PAPER_REVEAL_TIMING } from "../config/papers";
+import { PAPER_REVEAL_TIMING } from "../content/papers";
 
 const EDGE_CATCHUP_END = 1
   - PAPER_REVEAL_TIMING.edgeCatchupSeconds / PAPER_REVEAL_TIMING.revealSeconds;
