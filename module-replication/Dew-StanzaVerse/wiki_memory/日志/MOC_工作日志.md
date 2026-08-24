@@ -21,6 +21,7 @@ supersedes: null
 | 2026-08-25 | feature | - | archived | main-runtime-reducer-boundary-and-five-viewport-qa | [[日志/2026-08-25-主工程运行时Reducer边界迁移与五视口QA.md|主工程运行时 Reducer 边界迁移与五视口 QA]] |
 | 2026-08-25 | feature | - | archived | main-content-definition-dom-adapter-and-five-viewport-qa | [[日志/2026-08-25-主工程内容Definition与DOM适配.md|主工程内容 Definition 与 DOM 适配]] |
 | 2026-08-25 | feature | - | archived | main-world-assets-definition-migration-and-five-viewport-qa | [[日志/2026-08-25-主工程World资源定义迁移与QA.md|主工程 World 资源定义迁移与五视口 QA]] |
+| 2026-08-25 | feature | - | archived | main-scene-metadata-definition-and-five-viewport-qa | [[日志/2026-08-25-主工程SceneMetadata迁移与QA.md|主工程 Scene Metadata 迁移与五视口 QA]] |
 | 2026-08-25 | feature | - | archived | main-definition-boundary-and-idle-fluid-lifecycle | [[日志/2026-08-25-主工程Definition边界迁移与空闲悬停流体修正.md|主工程 Definition 边界迁移与空闲悬停流体修正]] |
 | 2026-08-25 | feature | - | archived | ground-instanced-batch-and-reveal-state-verification | [[日志/2026-08-25-Ground实例批次与Reveal状态验证.md|Ground 实例批次与 Reveal 状态验证]] |
 | 2026-08-25 | feature | - | archived | cutout-shadow-layer-reconstruction | [[日志/2026-08-25-Cutouts独立SDF阴影层重建与浏览器QA.md|Cutouts 独立 SDF 阴影层重建与浏览器 QA]] |

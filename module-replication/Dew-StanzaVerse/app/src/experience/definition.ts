@@ -30,7 +30,10 @@ export type ExperienceEffectName = "over-cta-back" | "over-cta-painting";
 
 export interface SceneDefinition {
   id: SceneId;
+  label: string;
   title: string;
+  focusProgress: number;
+  /** Legacy camera time derived from the source progress contract. */
   focusTime: number;
   videos: Record<DeviceKind, Record<VideoLayer, string>>;
 }
@@ -70,13 +73,24 @@ export interface ExperienceDefinition {
 const assetRoot = "/assets/xp";
 const sceneIds: readonly SceneId[] = [1, 2, 3, 4, 5, 6];
 const device = detectWorldDevice();
+const sceneTitles = [
+  "Dales with Cows",
+  "Nidderdale Farm",
+  "North York Moors",
+  "Dales near Aysgarth",
+  "Dales with Sheep",
+  "Ribblehead Viaduct",
+] as const;
+const sceneFocusProgress = [0.02, 0.14, 0.26, 0.34, 0.55, 0.66] as const;
 
 function createScene(id: SceneId): SceneDefinition {
-  const titlePaper = PAPERS_CONFIG.find((paper) => paper.sceneIndex === id && paper.title);
+  const focusProgress = sceneFocusProgress[id - 1];
   return {
     id,
-    title: titlePaper?.title ?? `Scene ${id}`,
-    focusTime: titlePaper?.startAt ?? 0,
+    label: `场景 ${id}`,
+    title: sceneTitles[id - 1],
+    focusProgress,
+    focusTime: focusProgress * CAMERA_ANIMATION_DURATION,
     videos: {
       desktop: {
         base: `${assetRoot}/videos/desktop/base/${id}.mp4`,
