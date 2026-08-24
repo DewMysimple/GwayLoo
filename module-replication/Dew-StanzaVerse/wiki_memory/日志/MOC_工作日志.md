@@ -18,6 +18,7 @@ supersedes: null
 | 2026-08-25 | bug | - | archived | circular-cursor-indicator-fix | [[日志/2026-08-25-自定义光标圆形指示器修复与QA.md|自定义光标圆形指示器修复与 QA]] |
 | 2026-08-25 | feature | - | archived | global-ground-background-shadow-reconstruction | [[日志/2026-08-25-全局Ground背景与阴影职责重建及交付QA.md|全局 Ground、Background 与阴影职责重建及交付 QA]] |
 | 2026-08-25 | test | - | archived | five-viewport-delivery-regression-and-cursor-gate | [[日志/2026-08-25-五视口交付回归与光标状态门禁修正.md|五视口交付回归与光标状态门禁修正]] |
+| 2026-08-25 | feature | - | archived | main-runtime-reducer-boundary-and-five-viewport-qa | [[日志/2026-08-25-主工程运行时Reducer边界迁移与五视口QA.md|主工程运行时 Reducer 边界迁移与五视口 QA]] |
 | 2026-08-25 | feature | - | archived | main-definition-boundary-and-idle-fluid-lifecycle | [[日志/2026-08-25-主工程Definition边界迁移与空闲悬停流体修正.md|主工程 Definition 边界迁移与空闲悬停流体修正]] |
 | 2026-08-25 | feature | - | archived | ground-instanced-batch-and-reveal-state-verification | [[日志/2026-08-25-Ground实例批次与Reveal状态验证.md|Ground 实例批次与 Reveal 状态验证]] |
 | 2026-08-25 | feature | - | archived | cutout-shadow-layer-reconstruction | [[日志/2026-08-25-Cutouts独立SDF阴影层重建与浏览器QA.md|Cutouts 独立 SDF 阴影层重建与浏览器 QA]] |

@@ -1,5 +1,6 @@
 import type * as THREE from "three";
 import type { PaperConfig } from "../config/papers";
+import type { ExperienceRuntimeState } from "./runtime/types";
 
 export type ExperiencePhase =
   | "loading"
@@ -16,6 +17,8 @@ export interface ExperienceState {
   inTransition: boolean;
   sceneIndex: number | null;
   fog: { opaque: number; occulted: number };
+  /** Main-project state boundary, kept alongside legacy visual phase names. */
+  runtime: ExperienceRuntimeState;
 }
 
 export interface RevealConfig {

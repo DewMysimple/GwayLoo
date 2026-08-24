@@ -56,6 +56,7 @@ export interface ExperienceDefinition {
   runtime: {
     cameraTailSeconds: number;
     travelMultiplier: number;
+    poemBreakpoints: readonly [number, number];
   };
 }
 
@@ -105,5 +106,6 @@ export const experienceDefinition: ExperienceDefinition = {
   runtime: {
     cameraTailSeconds: CAMERA_ANIMATION_DURATION - CAMERA_SCROLL_END,
     travelMultiplier: 7.5,
+    poemBreakpoints: [0.32, 0.62],
   },
 };

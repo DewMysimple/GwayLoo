@@ -31,6 +31,7 @@ window.addEventListener("resize", setVhVar);
 const canvas = document.getElementById("xp-canvas") as HTMLCanvasElement;
 
 function activateFallback(reason: string): void {
+  experienceManager.reportFailure(reason);
   document.documentElement.classList.add("is-fallback");
   document.documentElement.dataset.experiencePhase = "fallback";
   const fallback = document.getElementById("webgl-fallback");

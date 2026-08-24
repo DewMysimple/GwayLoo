@@ -29,6 +29,9 @@ import { FullPaintManager, FULLPAINT_EVENTS } from "./paint/FullPaintManager";
 import { PaintManager } from "./paint/PaintManager";
 import type { ExperiencePhase, ExperienceState } from "./types";
 import { experienceDefinition, type ExperienceDefinition } from "./definition";
+import { createInitialRuntimeState, experienceRuntimeReducer, type RuntimeReducerConfig } from "./runtime/reducer";
+import type { ExperienceRuntimeAction, ExperienceRuntimeState } from "./runtime/types";
+import { detectPerformanceTier } from "./runtime/performance";
 
 type TransitionMeta = "restart" | "showPoem" | "hidePoem" | "poemToOffers" | null;
 
@@ -57,12 +60,18 @@ export class ExperienceManager {
   private _showOffers = false;
   private _isOverPoem = false;
   private _fogState = { opaque: 0, occulted: 0 };
+  private _runtimeState: ExperienceRuntimeState = createInitialRuntimeState("high");
+  private _runtimeConfig: RuntimeReducerConfig = {
+    sceneStarts: [],
+    poemBreakpoints: [0.32, 0.62],
+  };
   private _state: ExperienceState = {
     phase: "loading",
     started: false,
     inTransition: false,
     sceneIndex: null,
     fog: this._fogState,
+    runtime: this._runtimeState,
   };
   private _transitionState: TransitionState = {
     inTransition: false,
@@ -76,7 +85,18 @@ export class ExperienceManager {
 
   constructor(definition: ExperienceDefinition = experienceDefinition) {
     this._definition = definition;
+    this._runtimeState = createInitialRuntimeState(detectPerformanceTier());
+    this._runtimeConfig = {
+      sceneStarts: definition.scenes.map((scene) => scene.focusTime / definition.world.cameraAnimationDuration),
+      poemBreakpoints: definition.runtime.poemBreakpoints,
+    };
+    this._state.runtime = this._runtimeState;
     this._watercolorView = new WatercolorView(definition);
+    bus.on(EVENTS.RESOURCES_PROGRESS, (payload) => {
+      const progress = typeof payload === "number" ? payload * 100 : 0;
+      this._dispatchRuntime({ type: "ASSET_PROGRESS", progress });
+    });
+    bus.on(EVENTS.RESOURCES_COMPLETE, () => this._dispatchRuntime({ type: "ASSETS_READY" }));
   }
 
   get fogState(): { opaque: number; occulted: number } {
@@ -85,6 +105,10 @@ export class ExperienceManager {
 
   get state(): ExperienceState {
     return this._state;
+  }
+
+  get runtimeState(): ExperienceRuntimeState {
+    return this._runtimeState;
   }
 
   get textCanvas(): TextCanvas {
@@ -115,6 +139,7 @@ export class ExperienceManager {
   /** 资源就绪后调用：构建全部模块（renderer 由入口创建，KTX2 依赖它） */
   init(canvas: HTMLCanvasElement, renderer: THREE.WebGLRenderer): void {
     this._canvas = canvas;
+    this._dispatchRuntime({ type: "BOOT_COMPLETE" });
 
     this._simulation = new FluidSimulation(renderer, this._definition);
     this._watercolorView.init(this._simulation);
@@ -130,7 +155,10 @@ export class ExperienceManager {
       poemView: this._poemView,
       fullPaintManager: this._fullPaintManager,
       simulation: this._simulation,
-      onFrame: (delta) => this._paintManager?.update(delta),
+      onFrame: (delta) => {
+        this._paintManager?.update(delta);
+        this._syncRuntimeScroll();
+      },
     });
 
     this._paintManager = new PaintManager(this._simulation, this._fullPaintManager, this._watercolorView, {
@@ -154,11 +182,15 @@ export class ExperienceManager {
       this._setFullpaintBackVisible(true);
       document.getElementById("scroll-to-explore")?.classList.add("hidden");
       this._state.sceneIndex = this._fullPaintManager?.sceneIndex ?? null;
+      if (this._state.sceneIndex) {
+        this._dispatchRuntime({ type: "OPEN_LANDSCAPE", scene: this._state.sceneIndex as 1 | 2 | 3 | 4 | 5 | 6 });
+      }
       this._setPhase("full-paint");
     });
     bus.on(FULLPAINT_EVENTS.HIDE, () => {
       this._setFullpaintBackVisible(false);
       this._state.sceneIndex = null;
+      this._dispatchRuntime({ type: "CLOSE_LANDSCAPE" });
       this._setPhase("scroll");
       this._setExperienceNotice(false);
     });
@@ -176,7 +208,13 @@ export class ExperienceManager {
     this._webglApp?.stop();
     this._webglApp = null;
     audioManager.setMuted(true);
+    this._dispatchRuntime({ type: "FAIL", message: "WebGL context lost; reload required for the watercolor scene" });
     this._setPhase("fallback");
+  }
+
+  /** Report an initialization/resource failure while keeping the written page available. */
+  reportFailure(message: string): void {
+    this._dispatchRuntime({ type: "FAIL", message });
   }
 
   /** 退出全幅绘画（Back 按钮调用） */
@@ -190,6 +228,7 @@ export class ExperienceManager {
     if (this._state.phase === "fallback" || !this._webglApp || !this._uiView) return;
     this._hasStarted = true;
     this._state.started = true;
+    this._dispatchRuntime({ type: "READY" });
     this._setPhase("scroll");
     this._webglApp!.start();
     this._uiView!.show();
@@ -258,6 +297,7 @@ export class ExperienceManager {
       return;
     }
     if (this._transitionState.inTransition) return;
+    this._dispatchRuntime({ type: "RESTART" });
     this._fillTransitionState("XP", null, "restart");
     this._setPhase("restart");
 
@@ -318,10 +358,20 @@ export class ExperienceManager {
       this._webglApp.fogState.opaque = this._fogState.opaque;
       this._webglApp.fogState.occulted = this._fogState.occulted;
     }
+    const muted = audioManager.muted;
+    if (this._runtimeState.muted !== muted) this._dispatchRuntime({ type: "SET_MUTED", muted });
+  }
+
+  private _syncRuntimeScroll(): void {
+    const progress = scrollController.sample.dampedProgress;
+    if (Math.abs(this._runtimeState.scrollProgress - progress) > 0.000001) {
+      this._dispatchRuntime({ type: "SCROLL_TO", progress });
+    }
   }
 
   private _handleShowOffers(): void {
     this._showOffers = true;
+    this._dispatchRuntime({ type: "ENTER_TAIL" });
     this.switchFogToOcculted(1.1);
     // 权益区出现时隐藏漂浮文字
     this._uiView?.hide();
@@ -334,6 +384,7 @@ export class ExperienceManager {
     if (this._hasStarted && !this._poemView?.isVisible) {
       this._uiView?.show();
     }
+    this._dispatchRuntime({ type: "SCROLL_TO", progress: scrollController.sample.dampedProgress });
     this._setPhase("scroll");
   }
 
@@ -381,6 +432,11 @@ export class ExperienceManager {
   private _setPhase(phase: ExperiencePhase): void {
     this._state.phase = phase;
     document.documentElement.dataset.experiencePhase = phase;
+  }
+
+  private _dispatchRuntime(action: ExperienceRuntimeAction): void {
+    this._runtimeState = experienceRuntimeReducer(this._runtimeState, action, this._runtimeConfig);
+    this._state.runtime = this._runtimeState;
   }
 
   private _swapTimeline(tl: gsap.core.Timeline): void {
