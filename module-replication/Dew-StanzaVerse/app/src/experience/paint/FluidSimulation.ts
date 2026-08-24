@@ -70,12 +70,12 @@ export class FluidSimulation {
   private _framesWithStencilEnabled = 0;
   private _visibilityHandler: () => void;
   private _definition: ExperienceDefinition;
-  private _papers: ExperienceDefinition["world"]["papers"];
+  private _presentation: ExperienceDefinition["world"]["paperLayers"]["presentation"];
 
   constructor(renderer: THREE.WebGLRenderer, definition: ExperienceDefinition = experienceDefinition) {
     this._renderer = renderer;
     this._definition = definition;
-    this._papers = definition.world.papers;
+    this._presentation = definition.world.paperLayers.presentation;
     const noiseTexture = resources.get<THREE.Texture>("noise/rgb-fractal");
     noiseTexture.wrapS = noiseTexture.wrapT = THREE.RepeatWrapping;
 
@@ -278,8 +278,8 @@ export class FluidSimulation {
   }
 
   regionRemap(sceneIndex: number): THREE.Vector4 {
-    let paperIndex = this._papers.findIndex((paper) => paper.sceneIndex === sceneIndex && paper.title);
-    if (paperIndex < 0) paperIndex = this._papers.findIndex((paper) => paper.sceneIndex === sceneIndex);
+    let paperIndex = this._presentation.findIndex((paper) => paper.sceneIndex === sceneIndex && paper.title);
+    if (paperIndex < 0) paperIndex = this._presentation.findIndex((paper) => paper.sceneIndex === sceneIndex);
     return this.regionRemapForPaper(Math.max(paperIndex, 0));
   }
 
@@ -385,7 +385,7 @@ export class FluidSimulation {
     const paperIndex = this._fullPaintPaperIndex >= 0
       ? this._fullPaintPaperIndex
       : Math.max(
-        this._papers.findIndex((paper) => paper.sceneIndex === sceneIndex && paper.title),
+        this._presentation.findIndex((paper) => paper.sceneIndex === sceneIndex && paper.title),
         0,
       );
     const previousUv = this._lastSceneUv.get(sceneIndex)?.clone() ?? uv.clone();

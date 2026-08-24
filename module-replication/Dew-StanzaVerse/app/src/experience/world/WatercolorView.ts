@@ -123,7 +123,7 @@ export class WatercolorView {
     this._definition = definition;
     this._sdfMap = new Map(definition.world.atlas.sdfEntries);
     this._texMap = new Map(definition.world.atlas.textureEntries);
-    this.paintingTitles = new PaintingTitles(definition.world.papers, definition.copy.landscapeCta);
+    this.paintingTitles = new PaintingTitles(definition.world.paperLayers.presentation, definition.copy.landscapeCta);
   }
 
   private get _papers(): readonly PaperConfig[] {

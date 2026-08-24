@@ -24,6 +24,7 @@ supersedes: null
 | 2026-08-25 | feature | - | archived | main-scene-metadata-definition-and-five-viewport-qa | [[日志/2026-08-25-主工程SceneMetadata迁移与QA.md|主工程 Scene Metadata 迁移与五视口 QA]] |
 | 2026-08-25 | feature | - | active | runtime-contract-boundary | [[日志/2026-08-25-主工程Runtime输入选择音频契约边界迁移与QA.md|主工程 Runtime 输入、选择、音频与契约边界迁移及 QA]] |
 | 2026-08-25 | feature | 将 Branch 中宽泛的 PaperConfig 按可观测源码职责拆成 Ground、SDF、vegetation、shadow 四个窄契约，并验证它们与 26 个纸片 manifest 对齐。 | archived | paper-layer-contracts | [[日志/2026-08-25-主工程Paper职责子契约解构与QA.md|2026-08-25｜主工程 Paper 职责子契约解构与 QA]] |
+| 2026-08-25 | feature | 消除标题层和 Full Paint 场景选择对完整 `world.papers` 的直接依赖，建立 Paper 场景呈现/主纸绑定窄契约。 | archived | paper-presentation-contract | [[日志/2026-08-25-主工程Paper场景呈现契约与FullPaint映射QA.md|2026-08-25｜主工程 Paper 场景呈现契约与 Full Paint 映射 QA]] |
 | 2026-08-25 | feature | - | archived | main-paper-manifest-webgl-boundary | [[日志/2026-08-25-主工程PaperManifest与WebGL职责边界迁移及QA.md|主工程 Paper Manifest 与 WebGL 职责边界迁移及 QA]] |
 | 2026-08-25 | feature | - | archived | main-definition-boundary-and-idle-fluid-lifecycle | [[日志/2026-08-25-主工程Definition边界迁移与空闲悬停流体修正.md|主工程 Definition 边界迁移与空闲悬停流体修正]] |
 | 2026-08-25 | feature | - | archived | main-atlas-and-rgba-noise-resource-boundary | [[日志/2026-08-25-主工程Atlas与RGBA噪声资源边界迁移及QA.md|主工程 Atlas 与 RGBA Noise 资源边界迁移及 QA]] |

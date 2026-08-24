@@ -36,11 +36,17 @@ export interface PaperShadowContract extends PaperLayerIdentity {
   hasHole: boolean;
 }
 
+export interface PaperPresentationContract extends PaperLayerIdentity {
+  title?: string;
+  cta?: string;
+}
+
 export interface PaperLayerContracts {
   ground: readonly PaperGroundContract[];
   sdf: readonly PaperSdfContract[];
   vegetation: readonly PaperVegetationContract[];
   shadow: readonly PaperShadowContract[];
+  presentation: readonly PaperPresentationContract[];
 }
 
 function identity(paper: PaperConfig, index: number): PaperLayerIdentity {
@@ -73,5 +79,10 @@ export const paperLayerContracts: PaperLayerContracts = Object.freeze({
     ...identity(paper, index),
     castShadow: paper.castShadow,
     hasHole: paper.hasHole,
+  }))),
+  presentation: Object.freeze(paperManifest.map((paper, index) => ({
+    ...identity(paper, index),
+    title: paper.title,
+    cta: paper.cta,
   }))),
 });

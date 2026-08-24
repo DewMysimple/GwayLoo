@@ -1,10 +1,9 @@
 import * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { resources } from "../../core/Resources";
-import { paperManifest, type PaperConfig } from "../../content/papers";
+import type { PaperPresentationContract } from "../../content/paper-layers";
 import { paintingTitleFragmentShader, paintingTitleVertexShader } from "../../shaders/paintingTitle";
 import type { PaintingTitleConfig } from "../types";
-import { experienceDefinition } from "../definition";
 
 interface FontChar {
   id: number;
@@ -51,8 +50,8 @@ export class PaintingTitles {
   private _renderResolution = new THREE.Vector2(window.innerWidth, window.innerHeight);
 
   constructor(
-    private readonly papers: readonly PaperConfig[] = paperManifest,
-    private readonly cta = experienceDefinition.copy.landscapeCta,
+    private readonly papers: readonly PaperPresentationContract[],
+    private readonly cta: string,
   ) {}
 
   init(gltf: GLTF): void {
