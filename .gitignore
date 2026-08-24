@@ -30,3 +30,8 @@ coverage/
 playwright-report/
 test-results/
 *.tsbuildinfo
+
+# Independent module-replication workspace: keep only the versioned routing docs.
+module-replication/*
+!module-replication/AGENTS.md
+!module-replication/README.md
