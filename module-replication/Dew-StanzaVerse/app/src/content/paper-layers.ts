@@ -8,35 +8,35 @@
 import { paperManifest } from "./papers";
 import type { PaperConfig } from "./papers";
 
-interface PaperLayerIdentity {
+export interface PaperIdentityContract {
   index: number;
   name: string;
   startAt: number;
   sceneIndex: number;
 }
 
-export interface PaperGroundContract extends PaperLayerIdentity {
+export interface PaperGroundContract extends PaperIdentityContract {
   hasGround: boolean;
   ground: PaperConfig["ground"];
 }
 
-export interface PaperSdfContract extends PaperLayerIdentity {
+export interface PaperSdfContract extends PaperIdentityContract {
   sdf: PaperConfig["sdf"];
   revealType: PaperConfig["revealType"];
   transparency: boolean;
 }
 
-export interface PaperVegetationContract extends PaperLayerIdentity {
+export interface PaperVegetationContract extends PaperIdentityContract {
   hasHoverEffect: boolean;
   leaves: PaperConfig["leaves"];
 }
 
-export interface PaperShadowContract extends PaperLayerIdentity {
+export interface PaperShadowContract extends PaperIdentityContract {
   castShadow: boolean;
   hasHole: boolean;
 }
 
-export interface PaperPresentationContract extends PaperLayerIdentity {
+export interface PaperPresentationContract extends PaperIdentityContract {
   title?: string;
   cta?: string;
 }
@@ -49,7 +49,7 @@ export interface PaperLayerContracts {
   presentation: readonly PaperPresentationContract[];
 }
 
-function identity(paper: PaperConfig, index: number): PaperLayerIdentity {
+function identity(paper: PaperConfig, index: number): PaperIdentityContract {
   return {
     index,
     name: paper.name,

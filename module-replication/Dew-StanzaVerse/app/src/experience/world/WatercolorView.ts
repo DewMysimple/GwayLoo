@@ -17,9 +17,9 @@ import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { resources } from "../../core/Resources";
 import type { LutData } from "../../core/Resources";
 import type { AtlasSdfEntry, AtlasTextureEntry } from "../../content/atlas";
-import type { PaperConfig } from "../../content/papers";
 import type {
   PaperGroundContract,
+  PaperIdentityContract,
   PaperSdfContract,
   PaperShadowContract,
 } from "../../content/paper-layers";
@@ -40,7 +40,6 @@ import { GlobalGroundLayer } from "./GlobalGroundLayer";
 
 interface PreparedPaper {
   index: number;
-  config: PaperConfig;
   mesh: THREE.Mesh;
   sdfData: AtlasSdfEntry;
   texData: AtlasTextureEntry;
@@ -55,7 +54,7 @@ interface PreparedPaper {
 
 interface PaperEntry {
   index: number;
-  config: PaperConfig;
+  identity: PaperIdentityContract;
   /** Hidden GLB authoring mesh retained only for raycasting and transforms. */
   mesh: THREE.Mesh;
   transform: THREE.Object3D;
@@ -126,8 +125,8 @@ export class WatercolorView {
     this.paintingTitles = new PaintingTitles(definition.world.paperLayers.presentation, definition.copy.landscapeCta);
   }
 
-  private get _papers(): readonly PaperConfig[] {
-    return this._definition.world.papers;
+  private get _papers(): readonly PaperIdentityContract[] {
+    return this._definition.world.paperLayers.presentation;
   }
 
   private get _isMobile(): boolean {
@@ -193,8 +192,8 @@ export class WatercolorView {
     const fullScreenHeight = viewportRatio > 1
       ? Math.max(64, Math.round(fullScreenSize / viewportRatio))
       : fullScreenSize;
-    const paperRegionInputs: SimulationRegionInput[] = this._papers.map((config, index) => {
-      const mesh = gltf.scene.getObjectByName(config.name) as THREE.Mesh | undefined;
+    const paperRegionInputs: SimulationRegionInput[] = this._papers.map((identity, index) => {
+      const mesh = gltf.scene.getObjectByName(identity.name) as THREE.Mesh | undefined;
       if (!mesh?.isMesh) return { paperIndex: index, width: 1, height: 1 };
       mesh.geometry.computeBoundingBox();
       const size = mesh.geometry.boundingBox!.getSize(new THREE.Vector3());
@@ -213,20 +212,20 @@ export class WatercolorView {
 
     // GLB meshes remain hidden authoring proxies. The visible papers are built
     // below from the source's single subdivided plane and instance matrices.
-    this._papers.forEach((config, index) => {
-      const mesh = gltf.scene.getObjectByName(config.name) as THREE.Mesh | undefined;
+    this._papers.forEach((identity, index) => {
+      const mesh = gltf.scene.getObjectByName(identity.name) as THREE.Mesh | undefined;
       if (!mesh || !(mesh as THREE.Mesh).isMesh) {
-        console.warn(`[WatercolorView] GLB 中找不到网格: ${config.name}`);
+        console.warn(`[WatercolorView] GLB 中找不到网格: ${identity.name}`);
         return;
       }
-      const sdfData = this._sdfMap.get(config.name);
-      const texData = this._texMap.get(config.name);
+      const sdfData = this._sdfMap.get(identity.name);
+      const texData = this._texMap.get(identity.name);
       const ground = this._definition.world.paperLayers.ground[index];
       const sdf = this._definition.world.paperLayers.sdf[index];
       const shadow = this._definition.world.paperLayers.shadow[index];
       if (!sdfData || !texData || !ground || !sdf || !shadow) return;
 
-      const reveal = createRevealConfig(sdfData.planeSize.y / sdfData.planeSize.x, config.name);
+      const reveal = createRevealConfig(sdfData.planeSize.y / sdfData.planeSize.x, identity.name);
       mesh.visible = false;
       mesh.frustumCulled = false;
       mesh.geometry.computeBoundingBox();
@@ -256,11 +255,11 @@ export class WatercolorView {
       this._paperSimulationBoxes.set(index, boxes.paperBox.clone());
       this._groundSimulationBoxes.set(index, boxes.groundBox.clone());
       const state = { alpha: 0, curve: 1, reveal: 0, rotationZ: -Math.PI / 2 };
-      this.papers.push({ index, config, mesh, transform, state, revealed: false, tween: null, ground, sdf, shadow });
-      prepared.push({ index, config, mesh, sdfData, texData, reveal, matrix: transform.matrix.clone(), simulationBox, simulationRemap, ground, sdf, shadow });
+      this.papers.push({ index, identity, mesh, transform, state, revealed: false, tween: null, ground, sdf, shadow });
+      prepared.push({ index, mesh, sdfData, texData, reveal, matrix: transform.matrix.clone(), simulationBox, simulationRemap, ground, sdf, shadow });
       this.instanceConfigs.push({
         index,
-        config,
+        identity,
         matrix: transform.matrix.clone(),
         proxy: mesh,
         paintAtlasRemap: new THREE.Vector4(
@@ -531,7 +530,7 @@ export class WatercolorView {
         return {
           kind: "ground",
           paperIndex: ground.paperIndex,
-          sceneIndex: paper.config.sceneIndex,
+          sceneIndex: paper.identity.sceneIndex,
           proxy: this._groundMesh,
           uv,
           point: hit.point.clone(),
@@ -546,7 +545,7 @@ export class WatercolorView {
       return {
         kind: "paper",
         paperIndex: paper.index,
-        sceneIndex: paper.config.sceneIndex,
+        sceneIndex: paper.identity.sceneIndex,
         proxy: hit.object,
         uv,
         point: hit.point.clone(),
@@ -669,7 +668,7 @@ export class WatercolorView {
       },
       0,
     );
-    const ground = this._grounds.find((entry) => entry.paperName === paper.config.name);
+    const ground = this._grounds.find((entry) => entry.paperName === paper.identity.name);
     if (ground && this._groundMaterial) {
       this._groundVisible[paper.index] = true;
       (this._groundMaterial.uniforms.uVisible.value as boolean[])[paper.index] = true;

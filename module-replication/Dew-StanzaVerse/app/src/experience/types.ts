@@ -1,5 +1,5 @@
 import type * as THREE from "three";
-import type { PaperConfig } from "../content/papers";
+import type { PaperIdentityContract } from "../content/paper-layers";
 import type { ExperienceRuntimeState } from "./runtime/types";
 
 export type ExperiencePhase =
@@ -28,7 +28,7 @@ export interface RevealConfig {
 
 export interface PaperInstanceConfig {
   index: number;
-  config: PaperConfig;
+  identity: PaperIdentityContract;
   matrix: THREE.Matrix4;
   proxy: THREE.Mesh;
   paintAtlasRemap: THREE.Vector4;
