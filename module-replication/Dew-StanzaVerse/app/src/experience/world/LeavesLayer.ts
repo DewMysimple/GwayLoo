@@ -8,7 +8,7 @@
 import * as THREE from "three";
 import { resources } from "../../core/Resources";
 import { IS_MOBILE } from "../../config/assets";
-import type { PaperConfig } from "../../content/papers";
+import type { PaperVegetationContract } from "../../content/paper-layers";
 import type { RaycastHit } from "../types";
 import {
   leavesFragmentShader,
@@ -33,7 +33,7 @@ export class LeavesLayer {
   readonly enabled = !IS_MOBILE;
 
   private _scene: THREE.Scene;
-  private _papers: readonly PaperConfig[];
+  private _papers: readonly PaperVegetationContract[];
   private _mesh: THREE.InstancedMesh | null = null;
   private _material: THREE.ShaderMaterial | null = null;
   private _positionScene: THREE.Scene | null = null;
@@ -50,7 +50,7 @@ export class LeavesLayer {
   private _time = 0;
   private _colors = new Map<number, THREE.Color>();
 
-  constructor(scene: THREE.Scene, papers: readonly PaperConfig[]) {
+  constructor(scene: THREE.Scene, papers: readonly PaperVegetationContract[]) {
     this._scene = scene;
     this._papers = papers;
     if (!this.enabled) return;

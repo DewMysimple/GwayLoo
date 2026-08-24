@@ -11,6 +11,7 @@ import type { ResourceItem } from "../core/Resources";
 import { watercolorAtlas } from "../content/atlas";
 import { experienceCopy } from "../content/experience";
 import { fontAssets } from "../content/fonts";
+import { paperLayerContracts, type PaperLayerContracts } from "../content/paper-layers";
 import {
   CAMERA_ANIMATION_DURATION,
   CAMERA_SCROLL_END,
@@ -60,6 +61,7 @@ export interface ExperienceDefinition {
     assets: typeof worldAssets;
     atlas: typeof watercolorAtlas;
     papers: readonly PaperConfig[];
+    paperLayers: PaperLayerContracts;
     groundAtlas: typeof GROUND_ATLAS;
     revealTiming: PaperRevealTiming;
     cameraAnimationDuration: number;
@@ -127,6 +129,7 @@ export const experienceDefinition: ExperienceDefinition = {
     assets: worldAssets,
     atlas: watercolorAtlas,
     papers: paperManifest,
+    paperLayers: paperLayerContracts,
     groundAtlas: GROUND_ATLAS,
     revealTiming: PAPER_REVEAL_TIMING,
     cameraAnimationDuration: CAMERA_ANIMATION_DURATION,

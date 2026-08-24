@@ -18,6 +18,11 @@ import { resources } from "../../core/Resources";
 import type { LutData } from "../../core/Resources";
 import type { AtlasSdfEntry, AtlasTextureEntry } from "../../content/atlas";
 import type { PaperConfig } from "../../content/papers";
+import type {
+  PaperGroundContract,
+  PaperSdfContract,
+  PaperShadowContract,
+} from "../../content/paper-layers";
 import { experienceDefinition, type ExperienceDefinition } from "../definition";
 import { paperVertexShader, paperFragmentShader } from "../../shaders/paper";
 import { groundVertexShader, groundFragmentShader } from "../../shaders/ground";
@@ -43,6 +48,9 @@ interface PreparedPaper {
   matrix: THREE.Matrix4;
   simulationBox: THREE.Vector4;
   simulationRemap: THREE.Vector4;
+  ground: PaperGroundContract;
+  sdf: PaperSdfContract;
+  shadow: PaperShadowContract;
 }
 
 interface PaperEntry {
@@ -54,6 +62,9 @@ interface PaperEntry {
   state: { alpha: number; curve: number; reveal: number; rotationZ: number };
   revealed: boolean;
   tween: gsap.core.Timeline | null;
+  ground: PaperGroundContract;
+  sdf: PaperSdfContract;
+  shadow: PaperShadowContract;
 }
 
 interface GroundEntry {
@@ -144,7 +155,7 @@ export class WatercolorView {
     this.scene.add(this.grassLayer.group);
     // Source F3 owns one global particle renderer (1024 instances + 32×32
     // position pass), rather than one simplified Points cloud per paper.
-    this._leavesLayer = new LeavesLayer(this.scene, this._papers);
+    this._leavesLayer = new LeavesLayer(this.scene, this._definition.world.paperLayers.vegetation);
 
     // 共享纹理
     const atlasTexture = resources.get<THREE.Texture>("atlas/texture");
@@ -187,7 +198,7 @@ export class WatercolorView {
       if (!mesh?.isMesh) return { paperIndex: index, width: 1, height: 1 };
       mesh.geometry.computeBoundingBox();
       const size = mesh.geometry.boundingBox!.getSize(new THREE.Vector3());
-      const boxes = this._computeSimulationBoxes(config, size.z, size.y);
+      const boxes = this._computeSimulationBoxes(this._definition.world.paperLayers.ground[index], size.z, size.y);
       return { paperIndex: index, width: boxes.fullSize.x, height: boxes.fullSize.y };
     });
     simulation.configureRegions(paperRegionInputs.concat({
@@ -210,7 +221,10 @@ export class WatercolorView {
       }
       const sdfData = this._sdfMap.get(config.name);
       const texData = this._texMap.get(config.name);
-      if (!sdfData || !texData) return;
+      const ground = this._definition.world.paperLayers.ground[index];
+      const sdf = this._definition.world.paperLayers.sdf[index];
+      const shadow = this._definition.world.paperLayers.shadow[index];
+      if (!sdfData || !texData || !ground || !sdf || !shadow) return;
 
       const reveal = createRevealConfig(sdfData.planeSize.y / sdfData.planeSize.x, config.name);
       mesh.visible = false;
@@ -236,14 +250,14 @@ export class WatercolorView {
       transform.rotation.z = Math.PI / 2;
       transform.updateMatrix();
 
-      const boxes = this._computeSimulationBoxes(config, width, height);
+      const boxes = this._computeSimulationBoxes(ground, width, height);
       const simulationBox = boxes.paperBox;
       const simulationRemap = simulation.regionRemapForPaper(index);
       this._paperSimulationBoxes.set(index, boxes.paperBox.clone());
       this._groundSimulationBoxes.set(index, boxes.groundBox.clone());
       const state = { alpha: 0, curve: 1, reveal: 0, rotationZ: -Math.PI / 2 };
-      this.papers.push({ index, config, mesh, transform, state, revealed: false, tween: null });
-      prepared.push({ index, config, mesh, sdfData, texData, reveal, matrix: transform.matrix.clone(), simulationBox, simulationRemap });
+      this.papers.push({ index, config, mesh, transform, state, revealed: false, tween: null, ground, sdf, shadow });
+      prepared.push({ index, config, mesh, sdfData, texData, reveal, matrix: transform.matrix.clone(), simulationBox, simulationRemap, ground, sdf, shadow });
       this.instanceConfigs.push({
         index,
         config,
@@ -265,11 +279,11 @@ export class WatercolorView {
         simulationRemap,
         reveal,
         initialRotationZ: -Math.PI / 2,
-        isTransparent: Boolean(config.transparency),
-        renderGroup: config.transparency ? "transparent" : "paint",
+        isTransparent: sdf.transparency,
+        renderGroup: sdf.transparency ? "transparent" : "paint",
       });
 
-      if (config.hasGround) this._prepareGround(config, mesh, index);
+      if (ground.hasGround) this._prepareGround(ground, mesh, index);
     });
 
     // The source Ground component is a single InstancedMesh with one instance
@@ -295,7 +309,7 @@ export class WatercolorView {
     this._paperMesh.instanceMatrix.needsUpdate = true;
     this.scene.add(this._paperMesh);
     this.shadowProjection.init(prepared
-      .filter((paper) => paper.config.castShadow)
+      .filter((paper) => paper.shadow.castShadow)
       .map((paper) => {
         const entry = this.papers[paper.index];
         return {
@@ -314,7 +328,7 @@ export class WatercolorView {
         };
       }));
     const cutoutSources: CutoutShadowSource[] = prepared
-      .filter((paper) => paper.config.hasHole)
+      .filter((paper) => paper.shadow.hasHole)
       .map((paper) => {
         const size = paper.mesh.geometry.boundingBox!.getSize(new THREE.Vector3());
         const position = paper.mesh.getWorldPosition(new THREE.Vector3());
@@ -398,14 +412,14 @@ export class WatercolorView {
         (uniforms.uCurveCoef.value as number[])[paper.index] = paper.state.curve;
         (uniforms.uRevealProgress.value as number[])[paper.index] = paper.state.reveal;
       }
-      const scheduledStart = this._definition.world.atlas.layerSchedule[paper.config.name] ?? paper.config.startAt;
+      const scheduledStart = this._definition.world.atlas.layerSchedule[paper.sdf.name] ?? paper.sdf.startAt;
       if (!paper.revealed && triggerTime >= scheduledStart) {
         this._reveal(paper);
       }
       paper.transform.rotation.z = -paper.state.rotationZ;
       paper.transform.updateMatrix();
       this._paperMesh?.setMatrixAt(paper.index, paper.transform.matrix);
-      if (paper.config.castShadow) {
+      if (paper.shadow.castShadow) {
         this.shadowProjection.updateSource(paper.index, this._createShadowMatrix(paper), paper.state.alpha);
       }
     });
@@ -621,9 +635,9 @@ export class WatercolorView {
 
   private _reveal(paper: PaperEntry): void {
     paper.revealed = true;
-    if (paper.config.hasHole) this.cutoutShadow.show(paper.index);
+    if (paper.shadow.hasHole) this.cutoutShadow.show(paper.index);
     const tl = gsap.timeline();
-    if (paper.config.revealType === "fade") {
+    if (paper.sdf.revealType === "fade") {
       // Source fade layers (background_2) stay flat and reveal through a
       // three-second opacity ramp; they do not use the ordinary paper's
       // curve/rise tracks.
@@ -687,7 +701,7 @@ export class WatercolorView {
     );
     geometry.setAttribute(
       "transparency",
-      new THREE.InstancedBufferAttribute(new Float32Array(papers.map((paper) => paper.config.transparency ? 1 : 0)), 1),
+      new THREE.InstancedBufferAttribute(new Float32Array(papers.map((paper) => paper.sdf.transparency ? 1 : 0)), 1),
     );
     plane.dispose();
     return geometry;
@@ -784,7 +798,7 @@ export class WatercolorView {
 
   /** Collect one source Ground instance and its transform metadata. */
   private _prepareGround(
-    config: PaperConfig,
+    config: PaperGroundContract,
     paperMesh: THREE.Mesh,
     paperIndex: number,
   ): void {
@@ -916,7 +930,7 @@ export class WatercolorView {
   }
 
   private _computeSimulationBoxes(
-    config: PaperConfig,
+    config: PaperGroundContract,
     paperWidth: number,
     paperHeight: number,
   ): { paperBox: THREE.Vector4; groundBox: THREE.Vector4; fullSize: THREE.Vector2 } {
