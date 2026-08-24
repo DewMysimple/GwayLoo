@@ -186,9 +186,17 @@ export class PaintManager {
 
   /** Source-style continuous pointer sampling: damping and raycast happen every frame. */
   update(delta: number): void {
+    if (this._fullPaint.isVisible && this._fullPaint.sceneIndex != null) {
+      // The source full-screen instance stays active for the entire overlay,
+      // even when the pointer is stationary or outside the canvas.
+      this._simulation.setFullPaintActive(true, this._pointerDown);
+    } else {
+      this._simulation.setFullPaintActive(false);
+    }
     if (!this._pointerInitialized || !this._pointerInside) {
       this.sceneIndex = null;
       this._view.setHoveredTitle(null);
+      this._view.setPaintInfosIntersection(null);
       this._resetStrokeContinuity();
       return;
     }
@@ -208,6 +216,7 @@ export class PaintManager {
 
     if (this._fullPaint.isVisible && this._fullPaint.sceneIndex != null) {
       this._view.setHoveredTitle(null);
+      this._view.setPaintInfosIntersection(null);
       if (!this._reducedMotion && move.lengthSq() > 0.002 && (this._pointerType === "mouse" || this._pointerDown)) {
         const uv = new THREE.Vector2(this._client.x / window.innerWidth, this._client.y / window.innerHeight);
         this._simulation.splatScene(this._fullPaint.sceneIndex, uv, move, this._pointerDown ? 1.55 : 1.1);
@@ -215,11 +224,15 @@ export class PaintManager {
       return;
     }
 
-    if (!this._callbacks.isInteractionEnabled()) return;
+    if (!this._callbacks.isInteractionEnabled()) {
+      this._view.setPaintInfosIntersection(null);
+      return;
+    }
     const titleHit = this._view.hitTestTitle(this._pointerCurrent);
     if (titleHit) {
       this.sceneIndex = titleHit.sceneIndex;
       this._view.setHoveredTitle(titleHit.sceneIndex);
+      this._view.setPaintInfosIntersection(null);
       this._callbacks.onCursorChange("paint");
       this._resetStrokeContinuity();
       return;
@@ -228,6 +241,7 @@ export class PaintManager {
     if (this._callbacks.isOverText(this._pointerCurrent.x, this._pointerCurrent.y)) {
       this._callbacks.onCursorChange("text");
       this.sceneIndex = null;
+      this._view.setPaintInfosIntersection(null);
       this._resetStrokeContinuity();
       return;
     }
@@ -235,12 +249,21 @@ export class PaintManager {
     const hit = this._raycastPapers(this._pointerCurrent);
     if (!hit) {
       this.sceneIndex = null;
+      this._view.setPaintInfosIntersection(null);
       this._resetStrokeContinuity();
       this._callbacks.onCursorChange("default");
       return;
     }
 
     this.sceneIndex = hit.sceneIndex;
+    this._simulation.markActive(hit.paperIndex, this._pointerDown);
+    this._view.setPaintInfosIntersection(
+      hit.kind === "paper" ? hit : null,
+      ndcVelocity,
+      !this._reducedMotion
+        && move.lengthSq() > 0.0001
+        && (this._pointerType === "mouse" || this._pointerDown),
+    );
     this._callbacks.onCursorChange("paint");
     const mobileCanPaint = this._pointerType === "mouse" || this._pointerDown;
     if (!this._reducedMotion && mobileCanPaint && move.lengthSq() > 0.002) {

@@ -20,7 +20,13 @@ export class ScrollCamera {
   private _duration = 0;
   private _pointerTarget = new THREE.Vector2();
   private _pointerCurrent = new THREE.Vector2();
+  private _pointerEuler = new THREE.Euler();
+  private _pointerQuaternion = new THREE.Quaternion();
   private _reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  private readonly _entryDuration = 5;
+  private readonly _pointerForceX = 2.55;
+  private readonly _pointerForceY = 9.2;
+  private readonly _pointerDamping = 0.3;
 
   /** 从 GLTF 场景初始化（gltf.scene 会被整体放进水彩场景） */
   init(gltf: GLTF): void {
@@ -46,6 +52,31 @@ export class ScrollCamera {
     return this._duration;
   }
 
+  getDebugState(): {
+    duration: number;
+    entryDuration: number;
+    pointerForceX: number;
+    pointerForceY: number;
+    pointerDamping: number;
+    touchParallaxDisabled: boolean;
+  } {
+    return {
+      duration: this._duration,
+      entryDuration: this._entryDuration,
+      pointerForceX: this._pointerForceX,
+      pointerForceY: this._pointerForceY,
+      pointerDamping: this._pointerDamping,
+      touchParallaxDisabled: this._touchParallaxDisabled(),
+    };
+  }
+
+  private _touchParallaxDisabled(): boolean {
+    return "ontouchstart" in window
+      || navigator.maxTouchPoints > 0
+      || window.innerWidth < 768
+      || window.matchMedia("(pointer: coarse)").matches;
+  }
+
   setPointer(clientX: number, clientY: number): void {
     this._pointerTarget.set(
       (clientX / window.innerWidth) * 2 - 1,
@@ -62,17 +93,31 @@ export class ScrollCamera {
     this._animatedNode.getWorldPosition(this.camera.position);
     this._animatedNode.getWorldQuaternion(this.camera.quaternion);
 
-    const entryLinear = this._reducedMotion ? 1 : Math.min(Math.max(time / 5, 0), 1);
-    const entry = 0.5 - 0.5 * Math.cos(Math.PI * entryLinear);
+    // Source `loaderAnimation` is a five-second sine.out track on the
+    // camera instance. Reduced motion keeps the final camera pose without
+    // spending five seconds moving the scene into place.
+    const entryLinear = this._reducedMotion ? 1 : Math.min(Math.max(time / this._entryDuration, 0), 1);
+    const entry = Math.sin(entryLinear * Math.PI * 0.5);
     this.camera.translateX(THREE.MathUtils.lerp(0.25, 0, entry));
     this.camera.translateZ(THREE.MathUtils.lerp(-0.85, 0.4, entry));
     this.camera.rotateY(THREE.MathUtils.lerp(-0.037 * Math.PI, 0, entry));
 
-    if (!this._reducedMotion) {
-      const alpha = 1 - Math.exp(-8 * Math.min(delta, 0.04));
+    if (!this._reducedMotion && !this._touchParallaxDisabled()) {
+      // Source maps pointer NDC to degrees (x/y intentionally use different
+      // forces), then approaches the target with coefRotate = 0.3.
+      const alpha = 1 - Math.exp(-this._pointerDamping * Math.max(delta, 0));
       this._pointerCurrent.lerp(this._pointerTarget, alpha);
-      this.camera.rotateX((this._pointerCurrent.y / 9.2) * 0.3);
-      this.camera.rotateY((-this._pointerCurrent.x / 2.55) * 0.3);
+      this._pointerEuler.set(
+        THREE.MathUtils.degToRad(this._pointerCurrent.y * this._pointerForceX),
+        THREE.MathUtils.degToRad(-this._pointerCurrent.x * this._pointerForceY),
+        0,
+        "XYZ",
+      );
+      this._pointerQuaternion.setFromEuler(this._pointerEuler);
+      // The source rotates the camera's parent container, so apply the
+      // pointer parallax in world space to both position and orientation.
+      this.camera.position.applyQuaternion(this._pointerQuaternion);
+      this.camera.quaternion.premultiply(this._pointerQuaternion);
     }
   }
 

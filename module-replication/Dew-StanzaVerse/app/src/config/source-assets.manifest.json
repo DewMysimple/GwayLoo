@@ -105,8 +105,8 @@
     },
     {
       "path": "xp/libs/basis/basis_transcoder.js",
-      "bytes": 62337,
-      "sha256": "48A0EF319A28BF0224EE88DED34F74EAF97C175BBA9EB18B47FB9720510AD6C4"
+      "bytes": 62358,
+      "sha256": "ADC89C49E31B7B55EC3B246F8ECFFC8E92164AADF0AD45E38757BBDDEB4031EC"
     },
     {
       "path": "xp/libs/basis/basis_transcoder.wasm",
@@ -115,13 +115,13 @@
     },
     {
       "path": "xp/lut/dry.3DL",
-      "bytes": 464074,
-      "sha256": "C3F54360B5FE5E73CC4222E46B4E937C77C4FF85BA2E9DC6D3AAC47EEA5D1874"
+      "bytes": 496845,
+      "sha256": "581F2017F4658CCA4832B16965B98E8782BFCDA15F1CEE65C14CA285BC9E53C3"
     },
     {
       "path": "xp/lut/ink.3DL",
-      "bytes": 6829,
-      "sha256": "39DEA308F1CD8EC3214AE9E7ABF3C380E1AD85575D40FFA6C058A7F9D943D1C1"
+      "bytes": 7344,
+      "sha256": "34BC89002DB09A0DB4FEE091E0A6E6B90CA648670F0BD48729E20956D345AE08"
     },
     {
       "path": "xp/models/scene.glb",
@@ -130,8 +130,8 @@
     },
     {
       "path": "xp/msdf/CanelaText-Light/CanelaText-Light.json",
-      "bytes": 156829,
-      "sha256": "195C45DB507A5F1F4E5CE312C09084B997C679BD852D5CE207CA35EBE6B8B06A"
+      "bytes": 164771,
+      "sha256": "2737400E568BA42E21D708712B07FE8979E05B7696BAA950E6EE3450FD5B700E"
     },
     {
       "path": "xp/msdf/CanelaText-Light/CanelaText-Light.png",

@@ -80,8 +80,9 @@ export class WebGLApp {
 
     const sample = scrollController.sample;
     const triggerTime = sample.rawProgress * this._watercolor.scrollCamera.duration;
-    this._watercolor.update(this._time, delta, sample.cameraTime, triggerTime, this.fogState);
+    this._watercolor.update(this._time, delta, sample.cameraTime, triggerTime, this.fogState, this.renderer);
     this._ui.update(scrollController.progress, this._time);
+    this._poem.update(this._time, scrollController.progress);
     this._fullPaint.update();
 
     const renderer = this.renderer;
@@ -89,7 +90,12 @@ export class WebGLApp {
 
     // 1. 水彩主场景
     this._watercolor.shadowProjection.render(renderer, this._watercolor.scrollCamera.camera);
-    this._watercolor.shadowProjection.renderComposite(renderer);
+    this._watercolor.shadowProjection.renderComposite(
+      renderer,
+      this._watercolor.scrollCamera.camera,
+      this._time,
+      this.fogState,
+    );
     renderer.render(this._watercolor.scene, this._watercolor.scrollCamera.camera);
 
     // 2. UI 覆盖层（漂浮文字）
@@ -98,7 +104,7 @@ export class WebGLApp {
     }
 
     // 3. 全幅绘画
-    if (this._fullPaint.isVisible) {
+    if (this._fullPaint.isRendering) {
       renderer.render(this._fullPaint.scene, this._fullPaint.camera);
     }
 
@@ -110,9 +116,10 @@ export class WebGLApp {
 
   resize(width: number, height: number): void {
     this.renderer.setSize(width, height);
-    this._watercolor.resize(width, height);
+    const renderSize = this.renderer.getDrawingBufferSize(new THREE.Vector2());
+    this._watercolor.resize(width, height, renderSize.x, renderSize.y);
     this._ui.resize(width, height);
-    this._poem.resize(width, height);
-    this._fullPaint.resize(width, height);
+    this._poem.resize(width, height, renderSize.x, renderSize.y);
+    this._fullPaint.resize(width, height, renderSize.x, renderSize.y);
   }
 }

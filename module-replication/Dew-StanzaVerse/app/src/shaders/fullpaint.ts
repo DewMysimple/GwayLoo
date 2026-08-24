@@ -7,6 +7,7 @@ import { GLSL_UTILS, GLSL_INK_REVEAL } from "./chunks";
 
 export const fullpaintVertexShader = /* glsl */ `
 varying vec2 vUv;
+uniform float uScale;
 
 float remap(float value, float start1, float stop1, float start2, float stop2) {
   return start2 + (stop2 - start2) * ((value - start1) / (stop1 - start1));
@@ -14,7 +15,7 @@ float remap(float value, float start1, float stop1, float start2, float stop2) {
 
 void main() {
     vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position * uScale, 1.0);
 }
 `;
 
@@ -27,6 +28,7 @@ ${GLSL_INK_REVEAL}
 varying vec2 vUv;
 
 uniform float uAlpha;
+uniform float uScale;
 uniform float uVisibleProgress;
 uniform vec2 uResolution;
 uniform vec2 uPaintTextureSize;
@@ -84,7 +86,9 @@ void main() {
 
     vec4 inkColor = computeInkReveal(uColor, color, vUv, uVisibleProgress, ratio, uNoiseTexture, uRevealPoints, uRevealPointsPos, 0.65);
 
-    gl_FragColor = vec4(inkColor.rgb, uAlpha);
-    gl_FragColor = linearToSrgb(gl_FragColor);
+    // The source leaves uAlpha unused here: computeInkReveal's globalIntensity
+    // is the actual alpha, and this pass is intentionally emitted without the
+    // paper/ground passes' explicit LinearTosRGB conversion.
+    gl_FragColor = inkColor;
 }
 `;

@@ -14,6 +14,8 @@ import {
   simPressureFragment,
   simGradientFragment,
   simAccumulationFragment,
+  simStencilVertexShader,
+  simStencilFragmentShader,
 } from "../../shaders/fluid";
 import { IS_MOBILE } from "../../config/assets";
 import { PAPERS_CONFIG } from "../../config/papers";
@@ -22,6 +24,8 @@ import type { BrushSample, SimulationInstanceState, SimulationRegion, Simulation
 
 const PRESSURE_ITERATIONS = 1;
 const TILE_PADDING = 4;
+const SOURCE_SIMULATION_DT = 0.008;
+const SOURCE_ACTIVITY_GRACE_MS = 5000;
 
 interface PackedTile {
   paperIndex: number;
@@ -36,6 +40,7 @@ export class FluidSimulation {
   private _camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   private _scene = new THREE.Scene();
   private _mesh: THREE.Mesh | null = null;
+  private _stencilMesh: THREE.Mesh | null = null;
 
   private _velocityA!: THREE.WebGLRenderTarget;
   private _velocityB!: THREE.WebGLRenderTarget;
@@ -51,14 +56,20 @@ export class FluidSimulation {
   private _pressureMat: THREE.ShaderMaterial;
   private _gradientMat: THREE.ShaderMaterial;
   private _accumulationMat: THREE.ShaderMaterial;
+  private _stencilMaterial: THREE.ShaderMaterial;
   private _regions = new Map<number, SimulationRegion>();
   private _atlasSize = 1;
   private _configured = false;
   private _time = 0;
   private _lastSceneUv = new Map<number, THREE.Vector2>();
   private _lastPaperRadii = new Map<number, THREE.Vector2>();
+  private _activeUntil = new Map<number, number>();
+  private _markedActiveThisFrame = new Set<number>();
   private _texelSize = new THREE.Vector2(1, 1);
   private _states = new Map<number, SimulationInstanceState>();
+  private _fullPaintPaperIndex = -1;
+  private _framesWithStencilEnabled = 0;
+  private _visibilityHandler: () => void;
 
   constructor(renderer: THREE.WebGLRenderer) {
     this._renderer = renderer;
@@ -138,6 +149,30 @@ export class FluidSimulation {
       depthTest: false,
       depthWrite: false,
     });
+    this._stencilMaterial = new THREE.ShaderMaterial({
+      vertexShader: simStencilVertexShader,
+      fragmentShader: simStencilFragmentShader,
+      depthTest: false,
+      depthWrite: false,
+      colorWrite: false,
+      side: THREE.DoubleSide,
+    });
+    [
+      this._splat,
+      this._advect,
+      this._divergenceMat,
+      this._pressureMat,
+      this._gradientMat,
+      this._accumulationMat,
+    ].forEach((material) => this._configureStencilMaterial(material));
+    this._stencilMaterial.stencilWrite = true;
+    this._stencilMaterial.stencilRef = 1;
+    this._stencilMaterial.stencilFunc = THREE.AlwaysStencilFunc;
+    this._stencilMaterial.stencilZPass = THREE.ReplaceStencilOp;
+    this._visibilityHandler = () => {
+      if (document.visibilityState === "visible") this._framesWithStencilEnabled = 2;
+    };
+    document.addEventListener("visibilitychange", this._visibilityHandler);
   }
 
   get texture(): THREE.Texture {
@@ -154,8 +189,12 @@ export class FluidSimulation {
     const maxTextureSize = this._renderer.capabilities.maxTextureSize;
     let tiles = inputs.map((input) => {
       const ratio = Math.max(input.width / Math.max(input.height, 0.001), 0.05);
-      let width = THREE.MathUtils.clamp(Math.round(input.width * coefficient), 128, maxTile);
-      let height = Math.max(64, Math.round(width / ratio));
+      let width = input.resolution
+        ? THREE.MathUtils.clamp(Math.round(input.resolution.width), 64, maxTile)
+        : THREE.MathUtils.clamp(Math.round(input.width * coefficient), 128, maxTile);
+      let height = input.resolution
+        ? THREE.MathUtils.clamp(Math.round(input.resolution.height), 64, maxTile)
+        : Math.max(64, Math.round(width / ratio));
       const scale = Math.min(1, maxTile / Math.max(width, height));
       width = Math.max(64, Math.round(width * scale));
       height = Math.max(64, Math.round(height * scale));
@@ -177,6 +216,9 @@ export class FluidSimulation {
     this._texelSize.set(1 / packed.size, 1 / packed.size);
     this._regions.clear();
     this._states.clear();
+    this._activeUntil.clear();
+    this._markedActiveThisFrame.clear();
+    this._fullPaintPaperIndex = inputs.find((input) => input.resolution)?.paperIndex ?? -1;
     packed.tiles.forEach((tile) => {
       const remap = new THREE.Vector4(
         tile.x / packed!.size,
@@ -204,9 +246,14 @@ export class FluidSimulation {
         deceleration: 0.98,
         attenuation: 0.96,
         intensity: 0,
-        dt: 0.008,
+        // The source scales its authored hover/mousedown dt by the tile's
+        // width relative to the shared simulation FBO width.
+        dt: SOURCE_SIMULATION_DT * tile.width / packed.size,
         active: false,
         wasActive: false,
+        wasActive2: false,
+        wasActive3: false,
+        wasActive4: false,
         pressed: false,
       });
     });
@@ -233,6 +280,19 @@ export class FluidSimulation {
     return this.regionRemapForPaper(Math.max(paperIndex, 0));
   }
 
+  /** Remap for the source's independent full-screen painting instance. */
+  fullPaintRegionRemap(): THREE.Vector4 {
+    if (this._fullPaintPaperIndex < 0) {
+      throw new Error("Full-paint simulation region is not configured");
+    }
+    return this.regionRemapForPaper(this._fullPaintPaperIndex);
+  }
+
+  /** Index of the isolated full-screen simulation tile, exposed for QA probes. */
+  get fullPaintPaperIndex(): number {
+    return this._fullPaintPaperIndex;
+  }
+
   /** Local QA probe: source channels are direction, displayed velocity, intensity. */
   readAccumulation(paperIndex: number, uv: THREE.Vector2): { direction: THREE.Vector2; wetness: number; pigment: number } {
     const region = this.regionForPaper(paperIndex);
@@ -247,10 +307,50 @@ export class FluidSimulation {
     };
   }
 
+  /**
+   * Match the source instance's delayed hover lifecycle. A paper remains
+   * active for five seconds after the pointer leaves, while a hit in the
+   * current frame refreshes the grace window immediately.
+   */
+  markActive(paperIndex: number, pressed = false): void {
+    const state = this._states.get(paperIndex);
+    if (!state) return;
+    state.active = true;
+    state.pressed = pressed;
+    state.deceleration = pressed ? 1 : 0.98;
+    state.attenuation = pressed ? 0.98 : 0.96;
+    this._activeUntil.set(paperIndex, performance.now() + SOURCE_ACTIVITY_GRACE_MS);
+    this._markedActiveThisFrame.add(paperIndex);
+  }
+
+  /** Keep only the source's independent Full Paint instance active. */
+  setFullPaintActive(active: boolean, pressed = false): void {
+    if (this._fullPaintPaperIndex < 0) return;
+    if (active) {
+      this._states.forEach((state) => {
+        if (state.paperIndex === this._fullPaintPaperIndex) return;
+        state.active = false;
+        state.pressed = false;
+        this._activeUntil.delete(state.paperIndex);
+        this._markedActiveThisFrame.delete(state.paperIndex);
+      });
+      this.markActive(this._fullPaintPaperIndex, pressed);
+    } else {
+      const state = this._states.get(this._fullPaintPaperIndex);
+      if (state) {
+        state.active = false;
+        state.pressed = false;
+        this._activeUntil.delete(this._fullPaintPaperIndex);
+        this._markedActiveThisFrame.delete(this._fullPaintPaperIndex);
+      }
+    }
+  }
+
   splat(sample: BrushSample): void {
     if (!this._configured) return;
     const state = this._states.get(sample.paperIndex);
     if (!state) return;
+    this.markActive(sample.paperIndex, sample.pressed);
     state.lastCenter.copy(state.center);
     state.center.copy(sample.currentUv);
     state.lastScale = state.scale;
@@ -260,13 +360,9 @@ export class FluidSimulation {
     } else {
       state.force.set(sample.ndcVelocity.x * 25, -sample.ndcVelocity.y * 25);
     }
-    state.pressed = sample.pressed;
-    state.deceleration = sample.pressed ? 1 : 0.98;
-    state.attenuation = sample.pressed ? 0.98 : 0.96;
-    state.dt = 0.008;
+    state.dt = SOURCE_SIMULATION_DT * state.fboSize.x / this._atlasSize;
     state.intensity = sample.intensity;
     state.active = true;
-    state.wasActive = true;
     this._syncStateAttributes();
     this._splat.uniforms.uInputTexture.value = this._velocityA.texture;
     (this._splat.uniforms.uPreviousPoint.value as THREE.Vector2).copy(sample.previousUv);
@@ -283,9 +379,12 @@ export class FluidSimulation {
   }
 
   splatScene(sceneIndex: number, uv: THREE.Vector2, move: THREE.Vector2, force = 1): void {
-    let paperIndex = PAPERS_CONFIG.findIndex((paper) => paper.sceneIndex === sceneIndex && paper.title);
-    if (paperIndex < 0) paperIndex = PAPERS_CONFIG.findIndex((paper) => paper.sceneIndex === sceneIndex);
-    paperIndex = Math.max(paperIndex, 0);
+    const paperIndex = this._fullPaintPaperIndex >= 0
+      ? this._fullPaintPaperIndex
+      : Math.max(
+        PAPERS_CONFIG.findIndex((paper) => paper.sceneIndex === sceneIndex && paper.title),
+        0,
+      );
     const previousUv = this._lastSceneUv.get(sceneIndex)?.clone() ?? uv.clone();
     this._lastSceneUv.set(sceneIndex, uv.clone());
     const region = this.regionForPaper(paperIndex);
@@ -314,6 +413,48 @@ export class FluidSimulation {
     });
   }
 
+  /**
+   * Clear only the isolated Full Paint tile before a new full-screen session.
+   * Scissored clears preserve every paper's local velocity and accumulation.
+   */
+  resetFullPaint(sceneIndex?: number): void {
+    if (!this._configured || this._fullPaintPaperIndex < 0) return;
+    const region = this.regionForPaper(this._fullPaintPaperIndex);
+    const state = this._states.get(this._fullPaintPaperIndex);
+    if (state) {
+      state.center.set(0, 0);
+      state.lastCenter.set(0, 0);
+      state.scale = 0;
+      state.lastScale = 0;
+      state.force.set(0, 0);
+      state.active = false;
+      state.wasActive = false;
+      state.wasActive2 = false;
+      state.wasActive3 = false;
+      state.wasActive4 = false;
+      state.pressed = false;
+      state.deceleration = 0.98;
+      state.attenuation = 0.96;
+    }
+    this._activeUntil.delete(this._fullPaintPaperIndex);
+    this._markedActiveThisFrame.delete(this._fullPaintPaperIndex);
+    if (sceneIndex != null) this._lastSceneUv.delete(sceneIndex);
+    this._lastPaperRadii.delete(this._fullPaintPaperIndex);
+    this._syncStateAttributes();
+    this._clearTargetRegion(
+      [
+        this._velocityA,
+        this._velocityB,
+        this._pressureA,
+        this._pressureB,
+        this._divergence,
+        this._accumulationA,
+        this._accumulationB,
+      ],
+      region,
+    );
+  }
+
   update(delta: number): void {
     if (!this._configured) return;
     const dt = Math.min(delta, 0.033);
@@ -323,7 +464,14 @@ export class FluidSimulation {
     // current frame duration so decay remains perceptually identical at
     // 60/120 Hz and under variable-rate QA capture.
     const sourceFrames = dt * 60;
+    const now = performance.now();
     this._states.forEach((state) => {
+      if ((this._activeUntil.get(state.paperIndex) ?? 0) <= now) {
+        state.active = false;
+      }
+      if (!this._markedActiveThisFrame.has(state.paperIndex)) {
+        state.pressed = false;
+      }
       state.deceleration = Math.pow(state.pressed ? 1 : 0.98, sourceFrames);
       state.attenuation = Math.pow(state.pressed ? 0.98 : 0.96, sourceFrames);
     });
@@ -331,6 +479,11 @@ export class FluidSimulation {
 
     this._advect.uniforms.uInputTexture.value = this._velocityA.texture;
     this._syncStateAttributes();
+    if (!this._hasStencilWork()) {
+      this._framesWithStencilEnabled = Math.max(0, this._framesWithStencilEnabled - 1);
+      this._markedActiveThisFrame.clear();
+      return;
+    }
     this._runPass(this._advect, this._velocityB);
     this._swapVelocity();
 
@@ -354,13 +507,15 @@ export class FluidSimulation {
     this._runPass(this._accumulationMat, this._accumulationB);
     [this._accumulationA, this._accumulationB] = [this._accumulationB, this._accumulationA];
     this._states.forEach((state) => {
-      if (!state.active) {
-        state.pressed = false;
-        state.deceleration = 0.98;
-        state.attenuation = 0.96;
-      }
-      state.active = false;
+      // Source keeps a four-frame history so the batch pass can flush a tile
+      // after the pointer leaves it before stencil work is skipped again.
+      state.wasActive4 = state.wasActive3;
+      state.wasActive3 = state.wasActive2;
+      state.wasActive2 = state.wasActive;
+      state.wasActive = state.active;
     });
+    this._framesWithStencilEnabled = Math.max(0, this._framesWithStencilEnabled - 1);
+    this._markedActiveThisFrame.clear();
     this._syncStateAttributes();
   }
 
@@ -368,6 +523,8 @@ export class FluidSimulation {
     if (!this._configured) return;
     this._lastSceneUv.clear();
     this._lastPaperRadii.clear();
+    this._activeUntil.clear();
+    this._markedActiveThisFrame.clear();
     this._states.forEach((state) => {
       state.center.set(0, 0);
       state.lastCenter.set(0, 0);
@@ -376,6 +533,9 @@ export class FluidSimulation {
       state.force.set(0, 0);
       state.active = false;
       state.wasActive = false;
+      state.wasActive2 = false;
+      state.wasActive3 = false;
+      state.wasActive4 = false;
     });
     this._syncStateAttributes();
     this._clearTargets([
@@ -440,7 +600,7 @@ export class FluidSimulation {
       wrapS: THREE.ClampToEdgeWrapping,
       wrapT: THREE.ClampToEdgeWrapping,
       depthBuffer: false,
-      stencilBuffer: false,
+      stencilBuffer: true,
     };
     this._velocityA = new THREE.WebGLRenderTarget(size, size, options);
     this._velocityB = new THREE.WebGLRenderTarget(size, size, options);
@@ -454,6 +614,7 @@ export class FluidSimulation {
   private _createAtlasMesh(regions: SimulationRegion[]): void {
     if (this._mesh) {
       this._scene.remove(this._mesh);
+      if (this._stencilMesh) this._scene.remove(this._stencilMesh);
       this._mesh.geometry.dispose();
     }
     const plane = new THREE.PlaneGeometry(1, 1);
@@ -471,10 +632,16 @@ export class FluidSimulation {
     geometry.setAttribute("aFboSize", new THREE.InstancedBufferAttribute(new Float32Array(regions.flatMap((region) => [region.width, region.height])), 2));
     geometry.setAttribute("aDeceleration", new THREE.InstancedBufferAttribute(new Float32Array(regions.map(() => 0.98)), 1).setUsage(THREE.DynamicDrawUsage));
     geometry.setAttribute("aAttenuation", new THREE.InstancedBufferAttribute(new Float32Array(regions.map(() => 0.96)), 1).setUsage(THREE.DynamicDrawUsage));
-    geometry.setAttribute("aDt", new THREE.InstancedBufferAttribute(new Float32Array(regions.map(() => 0.008)), 1).setUsage(THREE.DynamicDrawUsage));
+    geometry.setAttribute("aDt", new THREE.InstancedBufferAttribute(new Float32Array(regions.map((region) => SOURCE_SIMULATION_DT * region.width / this._atlasSize)), 1).setUsage(THREE.DynamicDrawUsage));
     geometry.setAttribute("aWasActive", new THREE.InstancedBufferAttribute(new Float32Array(regions.map(() => 0)), 1).setUsage(THREE.DynamicDrawUsage));
+    geometry.setAttribute("aStencilActive", new THREE.InstancedBufferAttribute(new Float32Array(regions.map(() => 0)), 1).setUsage(THREE.DynamicDrawUsage));
     this._mesh = new THREE.Mesh(geometry, this._splat);
     this._mesh.frustumCulled = false;
+    this._mesh.renderOrder = 0;
+    this._stencilMesh = new THREE.Mesh(geometry, this._stencilMaterial);
+    this._stencilMesh.frustumCulled = false;
+    this._stencilMesh.renderOrder = -1;
+    this._scene.add(this._stencilMesh);
     this._scene.add(this._mesh);
   }
 
@@ -485,16 +652,32 @@ export class FluidSimulation {
     const attenuation = geometry.getAttribute("aAttenuation") as THREE.InstancedBufferAttribute;
     const dt = geometry.getAttribute("aDt") as THREE.InstancedBufferAttribute;
     const wasActive = geometry.getAttribute("aWasActive") as THREE.InstancedBufferAttribute;
+    const stencilActive = geometry.getAttribute("aStencilActive") as THREE.InstancedBufferAttribute;
     this._states.forEach((state, paperIndex) => {
       deceleration.setX(paperIndex, state.deceleration);
       attenuation.setX(paperIndex, state.attenuation);
       dt.setX(paperIndex, state.dt);
-      wasActive.setX(paperIndex, state.wasActive ? 1 : 0);
+      // The source pass receives the current active getter. wasActive is
+      // retained separately as one-frame history for lifecycle inspection.
+      wasActive.setX(paperIndex, state.active ? 1 : 0);
+      const forceRenderAll = this._framesWithStencilEnabled > 0;
+      stencilActive.setX(
+        paperIndex,
+        forceRenderAll
+          || state.active
+          || state.wasActive
+          || state.wasActive2
+          || state.wasActive3
+          || state.wasActive4
+          ? 1
+          : 0,
+      );
     });
     deceleration.needsUpdate = true;
     attenuation.needsUpdate = true;
     dt.needsUpdate = true;
     wasActive.needsUpdate = true;
+    stencilActive.needsUpdate = true;
   }
 
   private _runPass(material: THREE.ShaderMaterial, target: THREE.WebGLRenderTarget): void {
@@ -503,10 +686,15 @@ export class FluidSimulation {
     const previousTarget = this._renderer.getRenderTarget();
     const previousColor = this._renderer.getClearColor(new THREE.Color()).clone();
     const previousAlpha = this._renderer.getClearAlpha();
+    const previousAutoClear = this._renderer.autoClear;
     this._renderer.setRenderTarget(target);
-    this._renderer.setClearColor(0x000000, 0);
-    this._renderer.clear(true, false, false);
+    // Preserve inactive atlas tiles in the ping-pong target. The stencil mesh
+    // writes only active/history regions; clearing color here would erase all
+    // other papers before their next pass.
+    this._renderer.autoClear = false;
+    this._renderer.clear(false, false, true);
     this._renderer.render(this._scene, this._camera);
+    this._renderer.autoClear = previousAutoClear;
     this._renderer.setRenderTarget(previousTarget);
     this._renderer.setClearColor(previousColor, previousAlpha);
   }
@@ -522,9 +710,47 @@ export class FluidSimulation {
     this._renderer.setClearColor(0x000000, 0);
     targets.forEach((target) => {
       this._renderer.setRenderTarget(target);
-      this._renderer.clear(true, false, false);
+      this._renderer.clear(true, false, true);
     });
     this._renderer.setRenderTarget(previousTarget);
     this._renderer.setClearColor(previousColor, previousAlpha);
+  }
+
+  private _clearTargetRegion(targets: THREE.WebGLRenderTarget[], region: SimulationRegion): void {
+    const previousTarget = this._renderer.getRenderTarget();
+    const previousColor = this._renderer.getClearColor(new THREE.Color()).clone();
+    const previousAlpha = this._renderer.getClearAlpha();
+    const previousScissorTest = this._renderer.getScissorTest();
+    const previousScissor = this._renderer.getScissor(new THREE.Vector4());
+    const previousViewport = this._renderer.getViewport(new THREE.Vector4());
+
+    this._renderer.setClearColor(0x000000, 0);
+    this._renderer.setScissorTest(true);
+    this._renderer.setScissor(region.x, region.y, region.width, region.height);
+    targets.forEach((target) => {
+      this._renderer.setRenderTarget(target);
+      this._renderer.clear(true, false, true);
+    });
+    this._renderer.setRenderTarget(previousTarget);
+    this._renderer.setClearColor(previousColor, previousAlpha);
+    this._renderer.setScissorTest(previousScissorTest);
+    this._renderer.setScissor(previousScissor);
+    this._renderer.setViewport(previousViewport);
+  }
+
+  private _configureStencilMaterial(material: THREE.ShaderMaterial): void {
+    material.stencilWrite = true;
+    material.stencilRef = 1;
+    material.stencilFunc = THREE.EqualStencilFunc;
+    material.stencilFail = THREE.KeepStencilOp;
+    material.stencilZFail = THREE.KeepStencilOp;
+    material.stencilZPass = THREE.KeepStencilOp;
+  }
+
+  private _hasStencilWork(): boolean {
+    if (this._framesWithStencilEnabled > 0) return true;
+    return [...this._states.values()].some((state) =>
+      state.active || state.wasActive || state.wasActive2 || state.wasActive3 || state.wasActive4,
+    );
   }
 }

@@ -113,7 +113,7 @@ export class ExperienceManager {
     this._watercolorView.init(this._simulation);
     this._uiView = new UIView(this._textCanvas);
     this._uiView.init();
-    this._poemView = new PoemView();
+    this._poemView = new PoemView(this._textCanvas, this._simulation);
     this._fullPaintManager = new FullPaintManager(this._simulation);
 
     this._webglApp = new WebGLApp({
@@ -143,6 +143,7 @@ export class ExperienceManager {
 
     // 全幅绘画显隐时联动 Back 按钮
     bus.on(FULLPAINT_EVENTS.SHOW, () => {
+      this._setExperienceNotice(false);
       this._setFullpaintBackVisible(true);
       document.getElementById("scroll-to-explore")?.classList.add("hidden");
       this._state.sceneIndex = this._fullPaintManager?.sceneIndex ?? null;
@@ -152,7 +153,23 @@ export class ExperienceManager {
       this._setFullpaintBackVisible(false);
       this._state.sceneIndex = null;
       this._setPhase("scroll");
+      this._setExperienceNotice(false);
     });
+    bus.on(FULLPAINT_EVENTS.ERROR, () => {
+      this._setExperienceNotice(true, "This painting could not be loaded locally. The written experience remains available below.");
+    });
+  }
+
+  /**
+   * WebGL context loss is not recoverable by the current resource graph. Stop
+   * the ticker and detach the runtime so the static page/fallback remains
+   * usable instead of continuing to submit commands to a dead context.
+   */
+  handleWebglContextLost(): void {
+    this._webglApp?.stop();
+    this._webglApp = null;
+    audioManager.setMuted(true);
+    this._setPhase("fallback");
   }
 
   /** 退出全幅绘画（Back 按钮调用） */
@@ -163,6 +180,7 @@ export class ExperienceManager {
 
   /** Loader 完成后启动体验 */
   start(): void {
+    if (this._state.phase === "fallback" || !this._webglApp || !this._uiView) return;
     this._hasStarted = true;
     this._state.started = true;
     this._setPhase("scroll");
@@ -228,6 +246,10 @@ export class ExperienceManager {
 
   /** 重启体验（权益区 Restart 按钮） */
   restart(): void {
+    if (!this._hasStarted || !this._webglApp || !this._uiView || !this._canvas) {
+      window.scrollTo({ top: 0, behavior: "auto" });
+      return;
+    }
     if (this._transitionState.inTransition) return;
     this._fillTransitionState("XP", null, "restart");
     this._setPhase("restart");
@@ -242,6 +264,7 @@ export class ExperienceManager {
       this._watercolorView.hideAll();
       this._simulation?.reset();
       this._uiView!.reset();
+      this._poemView?.reset();
       this._fullPaintManager?.hide();
       this._setPoemBackVisible(false);
       this._setFullpaintBackVisible(false);
@@ -319,6 +342,13 @@ export class ExperienceManager {
     if (!btn) return;
     btn.classList.toggle("is-visible", visible);
     gsap.to(btn, { opacity: visible ? 1 : 0, duration: 0.4 });
+  }
+
+  private _setExperienceNotice(visible: boolean, message = ""): void {
+    const notice = document.getElementById("experience-notice");
+    if (!notice) return;
+    if (message) notice.textContent = message;
+    notice.hidden = !visible;
   }
 
   private _fillTransitionState(toView: string | null, toOverlay: string | null, meta: TransitionMeta): void {

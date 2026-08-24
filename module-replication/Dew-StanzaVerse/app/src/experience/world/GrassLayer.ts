@@ -85,7 +85,7 @@ export class GrassLayer {
     });
   }
 
-  addGround(paperIndex: number, ground: THREE.Mesh, size: THREE.Vector2): void {
+  addGround(paperIndex: number, groundPosition: THREE.Vector3, groundRotationZ: number, size: THREE.Vector2): void {
     if (IS_MOBILE || !this._material) return;
     const instances = this._createPoints(size);
     if (!instances.length) return;
@@ -94,6 +94,18 @@ export class GrassLayer {
     source.rotateY(-Math.PI * 0.5);
     source.translate(0, 0.05, 0);
     const geometry = new THREE.InstancedBufferGeometry().copy(source);
+    // The source overrides the instanced geometry bounds using the complete
+    // ground patch. Three's default bounds only cover the 0.1 × 0.1 blade
+    // prototype, so frustum culling would drop distant grass while the camera
+    // travels even though its instance matrices are still inside the view.
+    geometry.boundingBox = new THREE.Box3(
+      new THREE.Vector3(-size.y, 0, -0.5 * size.x),
+      new THREE.Vector3(0, 5, 0.5 * size.x),
+    );
+    geometry.boundingSphere = new THREE.Sphere(
+      new THREE.Vector3(-0.5 * size.y, 2.5, 0),
+      Math.max(size.x, 2.5, size.y),
+    );
     const reveal = new Float32Array(instances.length);
     const remaps = new Float32Array(instances.length * 4);
     const gradients = new Float32Array(instances.length);
@@ -103,10 +115,10 @@ export class GrassLayer {
     const mesh = new THREE.InstancedMesh(geometry, this._material, instances.length);
     mesh.renderOrder = 200;
     mesh.frustumCulled = true;
-    mesh.position.copy(ground.position);
+    mesh.position.copy(groundPosition);
     // The source copies the paper container transform. Ground Z stores
     // -PI/2 + the authored paper yaw, so this recovers that same yaw.
-    mesh.rotation.y = ground.rotation.z + Math.PI * 0.5;
+    mesh.rotation.y = groundRotationZ + Math.PI * 0.5;
     const dummy = new THREE.Object3D();
     instances.forEach((instance, index) => {
       const bladeIndex = Math.floor(Math.random() * BLADE_ATLAS.length);
@@ -124,6 +136,9 @@ export class GrassLayer {
     this.group.add(mesh);
     const positions = new Float32Array(instances.length * 3);
     instances.forEach((instance, index) => positions.set([instance.x, 0, instance.z], index * 3));
+    const ground = new THREE.Object3D();
+    ground.position.copy(groundPosition);
+    ground.rotation.z = groundRotationZ;
     const config = { paperIndex, ground, positions, reveal };
     this.configs.push(config);
     this._patches.push({
@@ -177,8 +192,8 @@ export class GrassLayer {
     });
   }
 
-  resize(width: number, height: number): void {
-    (this._material?.uniforms.uResolution.value as THREE.Vector2 | undefined)?.set(width, height);
+  resize(renderWidth: number, renderHeight: number): void {
+    (this._material?.uniforms.uResolution.value as THREE.Vector2 | undefined)?.set(renderWidth, renderHeight);
   }
 
   reset(): void {

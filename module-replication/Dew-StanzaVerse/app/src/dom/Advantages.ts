@@ -13,9 +13,8 @@ import { experienceManager } from "../experience/ExperienceManager";
 
 export class Advantages {
   init(): void {
-    // The final section is intentionally an empty local content slot. Keep the
-    // legacy helpers tolerant of absent nodes, but do not instantiate observers
-    // or FAQ interaction for content that no longer exists.
+    this._setupReveal();
+    this._setupFaq();
     this._setupButtons();
   }
 
@@ -24,6 +23,10 @@ export class Advantages {
     const targets = document.querySelectorAll<HTMLElement>(
       ".advantages-header, .advantages-content .a-title, .a-step-wrapper, .a-cta-wrapper",
     );
+    if (!("IntersectionObserver" in window)) {
+      targets.forEach((element) => element.classList.add("show"));
+      return;
+    }
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -40,30 +43,33 @@ export class Advantages {
 
   /** FAQ 手风琴 */
   private _setupFaq(): void {
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     document.querySelectorAll<HTMLElement>(".faq .question").forEach((question) => {
-      const head = question.querySelector<HTMLElement>(".question-head");
+      const trigger = question.querySelector<HTMLElement>(".content-trigger");
       const wrapper = question.querySelector<HTMLElement>(".content-wrapper");
       const content = question.querySelector<HTMLElement>(".content");
-      if (!head || !wrapper || !content) return;
+      if (!trigger || !wrapper || !content) return;
 
-      head.setAttribute("role", "button");
-      head.setAttribute("tabindex", "0");
-      head.setAttribute("aria-expanded", "false");
+      trigger.setAttribute("role", "button");
+      trigger.setAttribute("tabindex", "0");
+      trigger.setAttribute("aria-expanded", "false");
 
       const toggle = () => {
         const isOpen = question.classList.contains("open");
         if (isOpen) {
           question.classList.remove("open");
-          head.setAttribute("aria-expanded", "false");
-          gsap.to(wrapper, { height: 0, duration: 0.5, ease: "power2.inOut" });
+          trigger.setAttribute("aria-expanded", "false");
+          if (reducedMotion) wrapper.style.height = "0px";
+          else gsap.to(wrapper, { height: 0, duration: 0.5, ease: "power2.inOut" });
         } else {
           question.classList.add("open");
-          head.setAttribute("aria-expanded", "true");
-          gsap.to(wrapper, { height: content.offsetHeight, duration: 0.5, ease: "power2.inOut" });
+          trigger.setAttribute("aria-expanded", "true");
+          if (reducedMotion) wrapper.style.height = "auto";
+          else gsap.to(wrapper, { height: content.scrollHeight, duration: 0.5, ease: "power2.inOut" });
         }
       };
-      head.addEventListener("click", toggle);
-      head.addEventListener("keydown", (event) => {
+      trigger.addEventListener("click", toggle);
+      trigger.addEventListener("keydown", (event) => {
         if (event.key !== "Enter" && event.key !== " ") return;
         event.preventDefault();
         toggle();
@@ -74,7 +80,8 @@ export class Advantages {
   /** 按钮：Restart / Back ×2 / 声音开关 */
   private _setupButtons(): void {
     document.getElementById("restart-btn")?.addEventListener("click", () => {
-      bus.emit(EVENTS.RESTART_WATERCOLOR);
+      if (experienceManager.state.started) bus.emit(EVENTS.RESTART_WATERCOLOR);
+      else window.scrollTo({ top: 0, behavior: "auto" });
     });
 
     document.getElementById("fullpaint-back")?.addEventListener("click", () => {

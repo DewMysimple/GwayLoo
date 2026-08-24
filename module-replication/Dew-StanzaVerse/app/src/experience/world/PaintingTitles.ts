@@ -48,6 +48,7 @@ export class PaintingTitles {
   private _items: RuntimeTitle[] = [];
   private _pointerNdc = new THREE.Vector2(10, 10);
   private _resolution = new THREE.Vector2(window.innerWidth, window.innerHeight);
+  private _renderResolution = new THREE.Vector2(window.innerWidth, window.innerHeight);
 
   init(gltf: GLTF): void {
     const titleProxies = gltf.scene.getObjectByName("titles");
@@ -81,7 +82,7 @@ export class PaintingTitles {
           uColor: { value: new THREE.Color(0x000000) },
           uAlpha: { value: 0 },
           uTime: { value: 0 },
-          uResolution: { value: this._resolution },
+          uResolution: { value: this._renderResolution },
           uMouseNdc: { value: this._pointerNdc },
           uCenterNdc: { value: new THREE.Vector2() },
           uFogState: { value: new THREE.Vector2() },
@@ -173,8 +174,9 @@ export class PaintingTitles {
     });
   }
 
-  resize(width: number, height: number): void {
+  resize(width: number, height: number, renderWidth = width, renderHeight = height): void {
     this._resolution.set(width, height);
+    this._renderResolution.set(renderWidth, renderHeight);
   }
 
   setPointer(clientX: number, clientY: number): void {

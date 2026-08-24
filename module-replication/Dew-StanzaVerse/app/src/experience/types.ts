@@ -70,6 +70,8 @@ export interface SimulationRegionInput {
   paperIndex: number;
   width: number;
   height: number;
+  /** Optional fixed pixel resolution for the source's full-screen instance. */
+  resolution?: { width: number; height: number };
 }
 
 export interface SimulationRegion {
@@ -100,6 +102,9 @@ export interface SimulationInstanceState {
   dt: number;
   active: boolean;
   wasActive: boolean;
+  wasActive2: boolean;
+  wasActive3: boolean;
+  wasActive4: boolean;
   pressed: boolean;
 }
 
@@ -123,6 +128,12 @@ export interface GrassInstanceConfig {
 export interface ShadowProjectionPipeline {
   texture: THREE.Texture;
   render(renderer: THREE.WebGLRenderer, camera: THREE.Camera): void;
+  renderComposite(
+    renderer: THREE.WebGLRenderer,
+    camera: THREE.Camera,
+    time: number,
+    fogState: { opaque: number; occulted: number },
+  ): void;
   resize(width: number, height: number): void;
   reset(): void;
 }

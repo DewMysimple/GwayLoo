@@ -28,18 +28,58 @@ export interface PaperConfig {
   cta?: string;
 }
 
+export type PaperRevealProfile = "delivery" | "source";
+
+export interface PaperRevealTiming {
+  profile: PaperRevealProfile;
+  riseSeconds: number;
+  curveSeconds: number;
+  revealSeconds: number;
+  revealProgressMax: number;
+  edgeCatchupSeconds: number;
+  completeLayerBaseline: number;
+}
+
 /**
- * User-selected timing overrides for the source-authored paper reveal.
- * The source runs the same tracks for 7 / 10 / 15 seconds; keeping the
- * overrides together prevents the renderer and QA from drifting apart.
+ * The delivery profile is the user-selected 3 / 5 / 7 second track. The
+ * source profile keeps the original 7 / 10 / 15 second reveal available for
+ * screenshot and pixel-diff work without forcing the shipped page to become
+ * seven seconds slower per paper. Both profiles use the same source points,
+ * uniforms and shader; only the timeline and Branch's optional ordinary-layer
+ * edge catch-up differ.
  */
-export const PAPER_REVEAL_TIMING = Object.freeze({
-  riseSeconds: 3,
-  curveSeconds: 5,
-  revealSeconds: 7,
-  revealProgressMax: 15,
-  edgeCatchupSeconds: 0.5,
-});
+const PAPER_REVEAL_PROFILES: Record<PaperRevealProfile, PaperRevealTiming> = {
+  delivery: {
+    profile: "delivery",
+    riseSeconds: 3,
+    curveSeconds: 5,
+    revealSeconds: 7,
+    revealProgressMax: 15,
+    edgeCatchupSeconds: 0.5,
+    completeLayerBaseline: 1,
+  },
+  source: {
+    profile: "source",
+    riseSeconds: 7,
+    curveSeconds: 10,
+    revealSeconds: 15,
+    revealProgressMax: 15,
+    edgeCatchupSeconds: 0,
+    completeLayerBaseline: 0,
+  },
+};
+
+function requestedPaperRevealProfile(): PaperRevealProfile {
+  if (typeof window === "undefined") return "delivery";
+  return new URLSearchParams(window.location.search).get("reveal") === "source"
+    ? "source"
+    : "delivery";
+}
+
+/** Active at module load so the shader and GSAP timeline cannot drift apart. */
+export const PAPER_REVEAL_TIMING = Object.freeze(
+  { ...PAPER_REVEAL_PROFILES[requestedPaperRevealProfile()] },
+);
 
 export const PAPERS_CONFIG: PaperConfig[] = [
   {

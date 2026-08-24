@@ -16,6 +16,12 @@ export interface ResourceItem {
   name: string;
 }
 
+export interface ResourceFailure {
+  name: string;
+  path: string;
+  message: string;
+}
+
 /** 3DL LUT 解析结果（对应原站 Gtt/Dtt 加载器的 { size, texture3D }） */
 export interface LutData {
   size: number;
@@ -31,6 +37,15 @@ export class Resources {
   private _textureLoader = new THREE.TextureLoader();
   private _ktx2Loader: KTX2Loader | null = null;
   private _fileLoader = new THREE.FileLoader();
+  private _failures: ResourceFailure[] = [];
+
+  get failures(): readonly ResourceFailure[] {
+    return this._failures;
+  }
+
+  get hasFailures(): boolean {
+    return this._failures.length > 0;
+  }
 
   /** KTX2 需要在 renderer 就绪后 detectSupport */
   setupKtx2(renderer: THREE.WebGLRenderer): void {
@@ -41,6 +56,7 @@ export class Resources {
 
   /** 预载一组资源，回报总进度 */
   async preload(items: ResourceItem[]): Promise<void> {
+    this._failures = [];
     let loaded = 0;
     const total = items.length;
     await Promise.all(
@@ -49,6 +65,8 @@ export class Resources {
           const result = await this._load(item);
           this._items.set(item.name, result);
         } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          this._failures.push({ name: item.name, path: item.path, message });
           console.error(`[Resources] 加载失败: ${item.name} (${item.path})`, err);
         } finally {
           loaded++;

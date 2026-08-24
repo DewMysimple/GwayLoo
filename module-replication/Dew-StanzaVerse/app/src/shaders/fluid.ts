@@ -47,6 +47,7 @@ precision highp float;
 varying vec2 vLocalUv;
 varying vec2 vSimulationUv;
 varying float vPaperIndex;
+varying float vWasActive;
 
 uniform sampler2D uInputTexture;
 uniform vec2 uPreviousPoint;
@@ -58,26 +59,42 @@ uniform float uIntensity;
 uniform float uPressed;
 uniform float uPaperIndex;
 
-float cross2d(vec2 a, vec2 b) {
-    return a.x * b.y - a.y * b.x;
-}
-
-float sdUnevenCapsule(vec2 p, vec2 pa, vec2 pb, float ra, float rb) {
-    p -= pa;
-    pb -= pa;
-    float h = dot(pb, pb);
-    if (h < 0.00000001) return length(p) - max(ra, rb);
-
-    vec2 q = vec2(dot(p, vec2(pb.y, -pb.x)), dot(p, pb)) / h;
-    q.x = abs(q.x);
-    float radiusDelta = ra - rb;
-    vec2 c = vec2(sqrt(max(h - radiusDelta * radiusDelta, 0.0)), radiusDelta);
-    float k = cross2d(c, q);
-    float m = dot(c, q);
-    float n = dot(q, q);
-    if (k < 0.0) return sqrt(h * n) - ra;
-    if (k > c.x) return sqrt(h * (n + 1.0 - 2.0 * q.y)) - rb;
-    return m - ra;
+// Source v2 uses an ellipse after the earlier circle/capsule experiment.
+// This exact SDF keeps the external force circular in screen space while the
+// simulation tile itself may be wide or tall.
+float sdEllipse(vec2 p, vec2 ab) {
+    p = abs(p);
+    if (p.x > p.y) { p = p.yx; ab = ab.yx; }
+    float l = ab.y * ab.y - ab.x * ab.x;
+    if (abs(l) < 0.000001) return length(p) - ab.x;
+    float m = ab.x * p.x / l;
+    float m2 = m * m;
+    float n = ab.y * p.y / l;
+    float n2 = n * n;
+    float c = (m2 + n2 - 1.0) / 3.0;
+    float c3 = c * c * c;
+    float q = c3 + m2 * n2 * 2.0;
+    float d = c3 + m2 * n2;
+    float g = m + m * n2;
+    float co;
+    if (d < 0.0) {
+        float h = acos(q / c3) / 3.0;
+        float s = cos(h);
+        float t = sin(h) * sqrt(3.0);
+        float rx = sqrt(-c * (s + t + 2.0) + m2);
+        float ry = sqrt(-c * (s - t + 2.0) + m2);
+        co = (ry + sign(l) * rx + abs(g) / (rx * ry) - m) / 2.0;
+    } else {
+        float h = 2.0 * m * n * sqrt(d);
+        float s = sign(q + h) * pow(abs(q + h), 1.0 / 3.0);
+        float u = sign(q - h) * pow(abs(q - h), 1.0 / 3.0);
+        float rx = -s - u - c * 4.0 + 2.0 * m2;
+        float ry = (s - u) * sqrt(3.0);
+        float rm = sqrt(rx * rx + ry * ry);
+        co = (ry / sqrt(rm - rx) + 2.0 * g / rm - m) / 2.0;
+    }
+    vec2 r = ab * vec2(co, sqrt(max(1.0 - co * co, 0.0)));
+    return length(r - p) * sign(p.y - r.y);
 }
 
 void main() {
@@ -86,42 +103,18 @@ void main() {
         gl_FragColor = data;
         return;
     }
-
-    // The source pass carries the previous centre and size so fast movement
-    // becomes one continuous uneven capsule.  Work in an aspect-corrected
-    // metric so the capsule still projects as a circular brush on screen.
-    vec2 largestRadius = max(max(uPreviousRadius, uCurrentRadius), vec2(0.00001));
-    float metricRadius = max(largestRadius.x, largestRadius.y);
-    vec2 metricAxis = max(largestRadius / metricRadius, vec2(0.00001));
-    vec2 point = vLocalUv / metricAxis;
-    vec2 previousPoint = uPreviousPoint / metricAxis;
-    vec2 currentPoint = uCurrentPoint / metricAxis;
-    vec2 previousMetricRadius = uPreviousRadius / metricAxis;
-    vec2 currentMetricRadius = uCurrentRadius / metricAxis;
-    float previousRadius = max(previousMetricRadius.x, previousMetricRadius.y);
-    float currentRadius = max(currentMetricRadius.x, currentMetricRadius.y);
-    float travel = length(currentPoint - previousPoint);
-
-    float distanceToStroke;
-    if (travel < 0.00001) {
-        distanceToStroke = length(point - currentPoint) - currentRadius;
-    } else if (previousRadius - currentRadius >= travel) {
-        distanceToStroke = length(point - previousPoint) - previousRadius;
-    } else if (currentRadius - previousRadius >= travel) {
-        distanceToStroke = length(point - currentPoint) - currentRadius;
-    } else {
-        distanceToStroke = sdUnevenCapsule(
-            point,
-            previousPoint,
-            currentPoint,
-            previousRadius,
-            currentRadius
-        );
+    if (vWasActive < 0.5) {
+        gl_FragColor = vec4(0.0);
+        return;
     }
 
-    float sdf = max(0.0, -distanceToStroke / max(max(previousRadius, currentRadius), 0.00001));
+    vec2 currentRadius = max(uCurrentRadius, vec2(0.00001));
+    float previousRadius = max(max(uPreviousRadius.x, uPreviousRadius.y), 0.00001);
+    float currentRadiusMax = max(currentRadius.x, currentRadius.y);
+    float sdf = sdEllipse(vLocalUv - uCurrentPoint, currentRadius);
+    sdf = max(0.0, -sdf / max(previousRadius, currentRadiusMax));
     float forceLength = length(uVector);
-    vec2 radial = normalize((point - currentPoint) + vec2(0.00001)) * forceLength;
+    vec2 radial = normalize((vLocalUv - uCurrentPoint) / currentRadius + vec2(0.00001)) * forceLength;
     vec2 injected = uPressed > 0.5
         ? radial * sdf * uVector.x
         : mix(uVector, radial, 0.2) * sdf;
@@ -175,7 +168,37 @@ void main() {
     vec3 advected = texture2D(uInputTexture, sourceUv).xyz;
     float dim = 1.0 + smoothstep(0.001, 0.0, length(offset)) * 3.0;
     float nextIntensity = max(max(advected.z, intensity) - uIntensityDim * dim, 0.0);
-    gl_FragColor = vec4(advected.xy * vDeceleration, nextIntensity, 0.0);
+
+    // The extracted bundle leaves the one-step result above as v1, then
+    // replaces its velocity with the authored v2 backtrace/forward-trace
+    // chain. Keep every lookup inside this atlas region: the source has
+    // padding between tiles, while this implementation must also remain
+    // correct when a packed tile reaches the atlas edge.
+    vec2 velocityV2 = advected.xy * noise2.r * 3.0;
+    vec2 spotNew = vSimulationUv;
+    vec2 spotOld = clamp(
+        spotNew - velocityV2 * vDt * ratio,
+        vRegion.xy,
+        vRegion.xy + vRegion.zw
+    );
+    velocityV2 = texture2D(uInputTexture, spotOld).xy * noise2.r * 2.0;
+
+    vec2 spotNew2 = spotOld + velocityV2 * vDt * ratio;
+    vec2 error = spotNew2 - spotNew;
+    vec2 spotNew3 = spotNew - error * 0.5;
+    velocityV2 = texture2D(
+        uInputTexture,
+        clamp(spotNew3, vRegion.xy, vRegion.xy + vRegion.zw)
+    ).xy * noise2.r;
+
+    vec2 spotOld2 = clamp(
+        spotNew3 - velocityV2 * vDt * ratio,
+        vRegion.xy,
+        vRegion.xy + vRegion.zw
+    );
+    velocityV2 = texture2D(uInputTexture, spotOld2).xy;
+
+    gl_FragColor = vec4(velocityV2 * vDeceleration, nextIntensity, 0.0);
 }
 `;
 
@@ -194,11 +217,38 @@ vec2 clampToRegion(vec2 value) {
 }
 
 void main() {
-    float right = texture2D(uVelocity, clampToRegion(vSimulationUv + vec2(uTexelSize.x * 2.0, 0.0))).r;
-    float left = texture2D(uVelocity, clampToRegion(vSimulationUv - vec2(uTexelSize.x * 2.0, 0.0))).r;
-    float top = texture2D(uVelocity, clampToRegion(vSimulationUv + vec2(0.0, uTexelSize.y * 2.0))).g;
-    float bottom = texture2D(uVelocity, clampToRegion(vSimulationUv - vec2(0.0, uTexelSize.y * 2.0))).g;
-    gl_FragColor = vec4(0.25 * (right - left + top - bottom), 0.0, 0.0, 1.0);
+    // Source divergence uses one cell step and normalizes by the per-instance
+    // dt. Pressure therefore receives velocity-per-time, not a raw delta
+    // whose magnitude changes with the authored simulation timestep.
+    float right = texture2D(uVelocity, clampToRegion(vSimulationUv + vec2(uTexelSize.x, 0.0))).r;
+    float left = texture2D(uVelocity, clampToRegion(vSimulationUv - vec2(uTexelSize.x, 0.0))).r;
+    float top = texture2D(uVelocity, clampToRegion(vSimulationUv + vec2(0.0, uTexelSize.y))).g;
+    float bottom = texture2D(uVelocity, clampToRegion(vSimulationUv - vec2(0.0, uTexelSize.y))).g;
+    float divergence = (right - left + top - bottom) * 0.5 / max(vDt, 0.000001);
+    gl_FragColor = vec4(divergence, 0.0, 0.0, 1.0);
+}
+`;
+
+/** Source batch-pass stencil geometry: inactive atlas tiles emit no fragments. */
+export const simStencilVertexShader = /* glsl */ `
+attribute vec4 aRegion;
+attribute float aStencilActive;
+
+void main() {
+    if (aStencilActive < 0.5) {
+        gl_Position = vec4(0.0, 0.0, 0.0, 0.0);
+        return;
+    }
+    vec2 simulationUv = aRegion.xy + uv * aRegion.zw;
+    gl_Position = vec4(simulationUv * 2.0 - 1.0, 0.0, 1.0);
+}
+`;
+
+export const simStencilFragmentShader = /* glsl */ `
+precision highp float;
+
+void main() {
+    gl_FragColor = vec4(1.0);
 }
 `;
 
