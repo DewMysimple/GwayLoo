@@ -82,7 +82,7 @@ function initializeRuntime(activeRenderer: THREE.WebGLRenderer): boolean {
 
     // KTX2 转码器（地面图集）与 DOM 组件都属于运行时初始化边界；
     // 任一项失败都必须进入可读 fallback，而不是让顶层模块异常中断。
-    resources.setupKtx2(activeRenderer);
+    resources.setupKtx2(activeRenderer, experienceDefinition.world.assets.basisTranscoderPath);
     loaderExperience.init();
     cursor.init();
     debugController.init(() => experienceManager.state);

@@ -11,7 +11,7 @@ import type { ResourceItem } from "../core/Resources";
 import { experienceCopy } from "../content/experience";
 import { fontAssets } from "../content/fonts";
 import { tailCopy } from "../content/tail";
-import { IS_MOBILE, STATIC_RESOURCES, VIDEO_RESOURCES } from "../config/assets";
+import { createVideoResources, detectWorldDevice, staticResources, worldAssets } from "../content/world";
 import {
   CAMERA_ANIMATION_DURATION,
   CAMERA_SCROLL_END,
@@ -53,6 +53,7 @@ export interface ExperienceDefinition {
   scenes: readonly SceneDefinition[];
   sounds: readonly SoundDefinition[];
   world: {
+    assets: typeof worldAssets;
     papers: readonly PaperConfig[];
     groundAtlas: typeof GROUND_ATLAS;
     revealTiming: PaperRevealTiming;
@@ -68,6 +69,7 @@ export interface ExperienceDefinition {
 
 const assetRoot = "/assets/xp";
 const sceneIds: readonly SceneId[] = [1, 2, 3, 4, 5, 6];
+const device = detectWorldDevice();
 
 function createScene(id: SceneId): SceneDefinition {
   const titlePaper = PAPERS_CONFIG.find((paper) => paper.sceneIndex === id && paper.title);
@@ -93,9 +95,9 @@ export const experienceDefinition: ExperienceDefinition = {
   fonts: fontAssets,
   tail: tailCopy,
   assets: {
-    staticResources: STATIC_RESOURCES,
-    videoResources: VIDEO_RESOURCES,
-    device: IS_MOBILE ? "mobile" : "desktop",
+    staticResources,
+    videoResources: createVideoResources(device),
+    device,
   },
   scenes: sceneIds.map(createScene),
   sounds: [
@@ -106,6 +108,7 @@ export const experienceDefinition: ExperienceDefinition = {
     { name: "over-cta-painting", kind: "effect", path: `${assetRoot}/sounds/over-cta-painting.mp3` },
   ],
   world: {
+    assets: worldAssets,
     papers: PAPERS_CONFIG,
     groundAtlas: GROUND_ATLAS,
     revealTiming: PAPER_REVEAL_TIMING,

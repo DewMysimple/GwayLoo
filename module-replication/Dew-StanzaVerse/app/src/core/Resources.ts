@@ -48,9 +48,9 @@ export class Resources {
   }
 
   /** KTX2 需要在 renderer 就绪后 detectSupport */
-  setupKtx2(renderer: THREE.WebGLRenderer): void {
+  setupKtx2(renderer: THREE.WebGLRenderer, transcoderPath = "/xp/libs/basis/"): void {
     this._ktx2Loader = new KTX2Loader()
-      .setTranscoderPath(`${BASE_PATH}/xp/libs/basis/`)
+      .setTranscoderPath(`${BASE_PATH}${transcoderPath}`)
       .detectSupport(renderer);
   }
 
