@@ -62,21 +62,9 @@ export class ExperienceManager {
   private _showOffers = false;
   private _isOverPoem = false;
   private _fogState = { opaque: 0, occulted: 0 };
-  private _runtimeState: ExperienceRuntimeState = createInitialRuntimeState("high");
-  private _runtimeConfig: RuntimeContract = {
-    sceneStarts: [],
-    poemBreakpoints: [0.32, 0.62],
-    cameraTailSeconds: 0,
-    travelMultiplier: 0,
-  };
-  private _state: ExperienceState = {
-    phase: "loading",
-    started: false,
-    inTransition: false,
-    sceneIndex: null,
-    fog: this._fogState,
-    runtime: this._runtimeState,
-  };
+  private _runtimeState!: ExperienceRuntimeState;
+  private _runtimeConfig!: RuntimeContract;
+  private _state!: ExperienceState;
   private _transitionState: TransitionState = {
     inTransition: false,
     toView: null,
@@ -91,8 +79,15 @@ export class ExperienceManager {
     this._definition = definition;
     this._runtimeState = createInitialRuntimeState(detectPerformanceTier());
     this._runtimeConfig = createRuntimeContract(definition);
+    this._state = {
+      phase: "loading",
+      started: false,
+      inTransition: false,
+      sceneIndex: null,
+      fog: this._fogState,
+      runtime: this._runtimeState,
+    };
     this._textCanvas = new TextCanvas(definition);
-    this._state.runtime = this._runtimeState;
     this._watercolorView = new WatercolorView(definition);
     bus.on(EVENTS.RESOURCES_PROGRESS, (payload) => {
       const progress = typeof payload === "number" ? payload * 100 : 0;

@@ -1,13 +1,9 @@
 import type { ExperienceRuntimeAction, ExperienceRuntimeState, PerformanceTier } from "./types";
-import type { RuntimeContract } from "./contract";
+import type { RuntimeSelectionConfig } from "./selection";
 import { clampRuntimeProgress, poemForProgress, sceneForProgress } from "./selection";
 
-export type RuntimeReducerConfig = Pick<RuntimeContract, "sceneStarts" | "poemBreakpoints">;
-
-const DEFAULT_CONFIG: RuntimeReducerConfig = {
-  sceneStarts: [0, 8.25 / 59.7666666667, 15.5 / 59.7666666667, 20 / 59.7666666667, 33 / 59.7666666667, 39.5 / 59.7666666667],
-  poemBreakpoints: [0.32, 0.62],
-};
+/** Narrow Definition-derived input required by the pure selection reducer. */
+export type RuntimeReducerConfig = RuntimeSelectionConfig;
 
 export function createInitialRuntimeState(
   performanceTier: PerformanceTier = "high",
@@ -29,7 +25,7 @@ export function createInitialRuntimeState(
 export function experienceRuntimeReducer(
   state: ExperienceRuntimeState,
   action: ExperienceRuntimeAction,
-  config: RuntimeReducerConfig = DEFAULT_CONFIG,
+  config: RuntimeReducerConfig,
 ): ExperienceRuntimeState {
   switch (action.type) {
     case "BOOT_COMPLETE":
