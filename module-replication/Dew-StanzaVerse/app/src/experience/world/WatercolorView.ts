@@ -195,7 +195,10 @@ export class WatercolorView {
     const noiseTexture = resources.get<THREE.Texture>("noise/greyscale-fractal");
     noiseTexture.wrapS = noiseTexture.wrapT = THREE.RepeatWrapping;
     const noiseFinalTexture = resources.get<THREE.Texture>("noise/rgb-generated");
-    noiseFinalTexture.wrapS = noiseFinalTexture.wrapT = THREE.RepeatWrapping;
+    // The extracted Paper material uses MirroredRepeatWrapping for the
+    // generated RGB reveal noise (Three r149 constant 1002). Repeating the
+    // edge produces a visible seam in the four-point ink front.
+    noiseFinalTexture.wrapS = noiseFinalTexture.wrapT = THREE.MirroredRepeatWrapping;
     const inkLut = resources.get<LutData>("lut/ink");
     const dryLut = resources.get<LutData>("lut/dry");
     const inkLut3d = this._createLut3d(inkLut);

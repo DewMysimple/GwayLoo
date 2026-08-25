@@ -35,6 +35,7 @@ supersedes: null
 | 2026-08-25 | feature | - | archived | main-atlas-and-rgba-noise-resource-boundary | [[日志/2026-08-25-主工程Atlas与RGBA噪声资源边界迁移及QA.md|主工程 Atlas 与 RGBA Noise 资源边界迁移及 QA]] |
 | 2026-08-25 | feature | 继续从 Branch 的原始提取源码还原 `papersContainer.hideAll()` 的共同隐藏生命周期，避免重启时瞬时清零、旧 shadow/cutout 残留或淡出过程中 Paper 重新触发 reveal；不改变水彩材质、波纹密度和默认显现参数。 | archived | paper-hide-timeline-restart-qa | [[日志/2026-08-25-Paper隐藏时间线与RestartQA.md|2026-08-25｜Paper 隐藏时间线与 Restart QA]] |
 | 2026-08-25 | feature | 继续从 Branch 自带的原始提取源码核对 Paper 的 GLB transform 边界，在不改变当前较好画面、波纹密度和 delivery 参数的前提下，消除 local+parent 手工拼接对嵌套层级的结构性依赖；完成浏览器回归并保持唯一 Chrome 页面。 | archived | paper-world-transform-extraction | [[日志/2026-08-25-Paper世界变换提取与五视口QA.md|2026-08-25｜Paper GLB 世界变换提取与五视口 QA]] |
+| 2026-08-25 | bug | - | archived | paper-fullpaint-shared-reveal-noise-wrap-and-shader-literature | [[日志/2026-08-25-Paper与FullPaint共享Reveal噪声边界及Shader学术对照QA.md|Paper 与 Full Paint 共享 Reveal 噪声边界及 Shader 学术对照 QA]] |
 | 2026-08-25 | feature | - | archived | ground-instanced-batch-and-reveal-state-verification | [[日志/2026-08-25-Ground实例批次与Reveal状态验证.md|Ground 实例批次与 Reveal 状态验证]] |
 | 2026-08-25 | feature | - | archived | cutout-shadow-layer-reconstruction | [[日志/2026-08-25-Cutouts独立SDF阴影层重建与浏览器QA.md|Cutouts 独立 SDF 阴影层重建与浏览器 QA]] |
 | 2026-08-24 | bug | - | archived | fallback-static-interaction-boundary | [[日志/2026-08-24-降级页面静态交互边界.md|降级页面静态交互边界]] |

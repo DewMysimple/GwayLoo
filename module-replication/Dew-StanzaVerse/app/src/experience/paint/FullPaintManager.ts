@@ -46,7 +46,10 @@ export class FullPaintManager {
     this._definition = definition;
 
     const noise = resources.get<THREE.Texture>("noise/rgb-generated");
-    noise.wrapS = noise.wrapT = THREE.RepeatWrapping;
+    // This texture is shared with Paper's four-point reveal noise. The source
+    // Full Paint material also uses mirrored repetition (1002); leaving this
+    // consumer on RepeatWrapping silently overwrites Paper's contract.
+    noise.wrapS = noise.wrapT = THREE.MirroredRepeatWrapping;
 
     const reveal = createRevealConfig(window.innerWidth / window.innerHeight, "full-paint", 1.5);
     this._material = new THREE.ShaderMaterial({
