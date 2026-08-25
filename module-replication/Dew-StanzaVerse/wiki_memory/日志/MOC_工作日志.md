@@ -39,6 +39,7 @@ supersedes: null
 | 2026-08-25 | bug | - | archived | paper-fullpaint-shared-reveal-noise-wrap-and-shader-literature | [[日志/2026-08-25-Paper与FullPaint共享Reveal噪声边界及Shader学术对照QA.md|Paper 与 Full Paint 共享 Reveal 噪声边界及 Shader 学术对照 QA]] |
 | 2026-08-25 | feature | - | archived | ground-instanced-batch-and-reveal-state-verification | [[日志/2026-08-25-Ground实例批次与Reveal状态验证.md|Ground 实例批次与 Reveal 状态验证]] |
 | 2026-08-25 | feature | - | archived | cutout-shadow-layer-reconstruction | [[日志/2026-08-25-Cutouts独立SDF阴影层重建与浏览器QA.md|Cutouts 独立 SDF 阴影层重建与浏览器 QA]] |
+| 2026-08-25 | architecture | - | archived | background-fullscreen-pass-source-uniform-contract | [[日志/2026-08-25-Background全屏Pass源码Uniform收敛与QA.md|Background 全屏 Pass 源码 Uniform 收敛与 QA]] |
 | 2026-08-24 | bug | - | archived | fallback-static-interaction-boundary | [[日志/2026-08-24-降级页面静态交互边界.md|降级页面静态交互边界]] |
 | 2026-08-24 | bug | - | archived | runtime-init-and-fluid-divergence | [[日志/2026-08-24-运行时初始化与流体散度对齐.md|运行时初始化与流体散度对齐]] |
 | 2026-08-24 | bug | - | archived | grass-frustum-bounds-and-architecture-memory | [[日志/2026-08-24-草层裁剪与水彩架构记忆校正.md|草层裁剪与水彩架构记忆校正]] |

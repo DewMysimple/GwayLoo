@@ -368,25 +368,31 @@ export class WatercolorView {
     prepared.forEach((paper, index) => this._paperMesh!.setMatrixAt(index, paper.matrix));
     this._paperMesh.instanceMatrix.needsUpdate = true;
     this.scene.add(this._paperMesh);
-    this.shadowProjection.init(prepared
-      .filter((paper) => paper.shadow.castShadow)
-      .map((paper) => {
-        const entry = this.papers[paper.index];
-        return {
-          paperIndex: paper.index,
-          matrix: this._createShadowMatrix(entry),
-          sdfAtlasRemap: new THREE.Vector4(
-            paper.sdfData.atlasRemap.x,
-            paper.sdfData.atlasRemap.y,
-            paper.sdfData.atlasRemap.z,
-            paper.sdfData.atlasRemap.w,
-          ),
-          sdfScale: new THREE.Vector2(paper.sdfData.scale.x, paper.sdfData.scale.y),
-          sdfOriginSize: new THREE.Vector2(paper.sdfData.originSize.x, paper.sdfData.originSize.y),
-          sdfPlaneSize: new THREE.Vector2(paper.sdfData.planeSize.x, paper.sdfData.planeSize.y),
-          alpha: 0,
-        };
-      }));
+    this.shadowProjection.init(
+      prepared
+        .filter((paper) => paper.shadow.castShadow)
+        .map((paper) => {
+          const entry = this.papers[paper.index];
+          return {
+            paperIndex: paper.index,
+            matrix: this._createShadowMatrix(entry),
+            sdfAtlasRemap: new THREE.Vector4(
+              paper.sdfData.atlasRemap.x,
+              paper.sdfData.atlasRemap.y,
+              paper.sdfData.atlasRemap.z,
+              paper.sdfData.atlasRemap.w,
+            ),
+            sdfScale: new THREE.Vector2(paper.sdfData.scale.x, paper.sdfData.scale.y),
+            sdfOriginSize: new THREE.Vector2(paper.sdfData.originSize.x, paper.sdfData.originSize.y),
+            sdfPlaneSize: new THREE.Vector2(paper.sdfData.planeSize.x, paper.sdfData.planeSize.y),
+            alpha: 0,
+          };
+        }),
+      {
+        uBackground: this._paperMaterial.uniforms.uBackground,
+        uLighting: this._paperMaterial.uniforms.uLighting,
+      },
+    );
     const cutoutSources: CutoutShadowSource[] = prepared
       .filter((paper) => paper.shadow.hasHole)
       .map((paper) => {

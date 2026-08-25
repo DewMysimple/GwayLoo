@@ -1,8 +1,8 @@
 import * as THREE from "three";
 import gsap from "gsap";
 import { resources } from "../../core/Resources";
+import { backgroundFragmentShader, backgroundVertexShader } from "../../shaders/background";
 import { shadowFragmentShader, shadowVertexShader } from "../../shaders/shadow";
-import { GLSL_FOG, GLSL_UTILS } from "../../shaders/chunks";
 import type { ShadowProjectionPipeline } from "../types";
 
 export interface ShadowSource {
@@ -13,6 +13,11 @@ export interface ShadowSource {
   sdfOriginSize: THREE.Vector2;
   sdfPlaneSize: THREE.Vector2;
   alpha: number;
+}
+
+interface SharedBackgroundUniforms {
+  uLighting: { value: unknown };
+  uBackground: { value: unknown };
 }
 
 export class ShadowProjection implements ShadowProjectionPipeline {
@@ -31,74 +36,31 @@ export class ShadowProjection implements ShadowProjectionPipeline {
     const material = new THREE.ShaderMaterial({
       depthTest: false,
       depthWrite: false,
-      vertexShader: `
-        varying vec2 vUv;
-        varying vec3 vWorldPosition;
-        varying float vFogDepth;
-        uniform mat4 uProjectionInverse;
-        uniform mat4 uViewMatrixInv;
-        uniform mat4 uViewMatrix;
-
-        vec3 worldPosFromDepth(float depth) {
-          float z = depth * 2.0 - 1.0;
-          vec4 clipSpacePosition = vec4(vUv * 2.0 - 1.0, z, 1.0);
-          vec4 viewSpacePosition = uProjectionInverse * clipSpacePosition;
-          viewSpacePosition /= viewSpacePosition.w;
-          vec4 worldSpacePosition = uViewMatrixInv * viewSpacePosition;
-          return worldSpacePosition.xyz;
-        }
-
-        void main() {
-          vUv = uv;
-          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-          // Background is authored as a 2x2 plane at world z=0. Its fog
-          // depth comes from that plane in the main camera view, while the
-          // fog noise position is reconstructed from the far clip point,
-          // matching the source Background vertex contract.
-          vFogDepth = -(uViewMatrix * vec4(position, 1.0)).z;
-          vWorldPosition = worldPosFromDepth(1.0);
-          gl_Position = vec4(position.xy, 0.0, 1.0);
-        }
-      `,
-      fragmentShader: `
-        precision highp float;
-        ${GLSL_UTILS}
-        ${GLSL_FOG}
-        varying vec2 vUv;
-        varying vec3 vWorldPosition;
-        varying float vFogDepth;
-        uniform vec2 uResolution;
-        uniform float uTime;
-        uniform vec2 uFogState;
-        uniform sampler2D tNoiseTexture;
-        uniform vec3 uGroundColor;
-        uniform vec3 uSkyColor;
-        uniform vec2 uProgressRemap;
-        float sineInOut(float t){return -0.5*(cos(3.141592653589793*t)-1.0);}
-        void main(){
-          vec2 screenUv=gl_FragCoord.xy/uResolution;
-          float base=cremap(screenUv.y,uProgressRemap.x,uProgressRemap.y,0.0,1.0);
-          float progress=sineInOut(1.0-abs((base-0.5)*2.0));
-          vec3 color=mix(uGroundColor,uSkyColor,progress);
-          vec2 specular=(screenUv-vec2(1.2,0.7))/vec2(0.82,0.67);
-          specular.x*=uResolution.x/uResolution.y;
-          float light=sineInOut(1.0-min(length(specular),1.0))*0.18;
-          color+=light;
-          color=getFogColorWithRatio(uTime,vFogDepth,screenUv,uResolution,vWorldPosition,color,tNoiseTexture,uFogState.x,uFogState.y);
-          gl_FragColor=linearToSrgb(vec4(color,1.0));
-        }
-      `,
+      vertexShader: backgroundVertexShader,
+      fragmentShader: backgroundFragmentShader,
       uniforms: {
         uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+        uRatio: { value: window.innerWidth / Math.max(window.innerHeight, 1) },
         uProjectionInverse: { value: new THREE.Matrix4() },
         uViewMatrixInv: { value: new THREE.Matrix4() },
         uViewMatrix: { value: new THREE.Matrix4() },
         uTime: { value: 0 },
         uFogState: { value: this._compositeFog },
         tNoiseTexture: { value: null },
-        uGroundColor: { value: new THREE.Color("#b4b4b4") },
-        uSkyColor: { value: new THREE.Color("#e4e4e4") },
-        uProgressRemap: { value: new THREE.Vector2(0.5, 1) },
+        uLighting: { value: {
+          groundSpecularScale: new THREE.Vector2(27.5, 10.7),
+          groundSpecularOffset: new THREE.Vector2(8.12, 0.38),
+          groundSpecularStrength: 0.47,
+          specularCenter: new THREE.Vector2(1.2, 0.7),
+          specularScale: new THREE.Vector2(0.82, 0.67),
+          specularOffset: new THREE.Vector2(0, 0),
+          specularStrength: 0.18,
+        } },
+        uBackground: { value: {
+          groundColor: new THREE.Color("#b4b4b4"),
+          skyColor: new THREE.Color("#e4e4e4"),
+          progressRemap: new THREE.Vector2(0.5, 1),
+        } },
       },
     });
     this._compositeMaterial = material;
@@ -107,11 +69,15 @@ export class ShadowProjection implements ShadowProjectionPipeline {
 
   get texture(): THREE.Texture { return this._target.texture; }
 
-  init(sources: ShadowSource[]): void {
+  init(sources: ShadowSource[], sharedUniforms?: SharedBackgroundUniforms): void {
     this._sources = sources;
     const fogNoise = resources.get<THREE.Texture>("noise/rgb-fractal");
     fogNoise.wrapS = fogNoise.wrapT = THREE.RepeatWrapping;
     this._compositeMaterial.uniforms.tNoiseTexture.value = fogNoise;
+    if (sharedUniforms) {
+      this._compositeMaterial.uniforms.uLighting = sharedUniforms.uLighting;
+      this._compositeMaterial.uniforms.uBackground = sharedUniforms.uBackground;
+    }
     const plane = new THREE.PlaneGeometry(1, 1, 5, 5);
     plane.translate(0, -0.5, 0);
     plane.rotateX(Math.PI);
@@ -192,6 +158,8 @@ export class ShadowProjection implements ShadowProjectionPipeline {
     this._compositeFog.set(fogState.opaque, fogState.occulted);
     const uniforms = this._compositeMaterial.uniforms;
     uniforms.uTime.value = this._compositeTime;
+    const resolution = uniforms.uResolution.value as THREE.Vector2;
+    uniforms.uRatio.value = resolution.x / Math.max(resolution.y, 1);
     (uniforms.uFogState.value as THREE.Vector2).copy(this._compositeFog);
     (uniforms.uProjectionInverse.value as THREE.Matrix4).copy(camera.projectionMatrixInverse);
     (uniforms.uViewMatrixInv.value as THREE.Matrix4).copy(camera.matrixWorld);
@@ -205,6 +173,7 @@ export class ShadowProjection implements ShadowProjectionPipeline {
     // that same physical pixel space on DPR>1 screens.
     this._target.setSize(Math.max(1, Math.round(width)), Math.max(1, Math.round(height)));
     this._compositeMaterial.uniforms.uResolution.value.set(width, height);
+    this._compositeMaterial.uniforms.uRatio.value = width / Math.max(height, 1);
   }
 
   reset(): void {
