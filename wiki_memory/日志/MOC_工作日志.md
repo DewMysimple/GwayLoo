@@ -17,6 +17,7 @@ supersedes: null
 | --- | --- | --- | --- | --- | --- |
 | 2026-08-25 | maintenance | - | archived | web-blender-memory-routing | [[日志/2026-08-25-网页与Blender工程记忆分流.md|网页与 Blender 工程记忆分流]] |
 | 2026-08-25 | maintenance | - | archived | commit-without-push | [[日志/2026-08-25-任务交付仅提交不推送.md|任务交付仅提交不推送]] |
+| 2026-08-25 | maintenance | - | archived | github-readme-bilingual-refresh | [[日志/2026-08-25-GitHub README双语重构与旧路径清理.md|GitHub README 双语重构与旧路径清理]] |
 | 2026-08-24 | maintenance | - | archived | module-replication-memory-boundary | [[日志/2026-08-24-支线模块隔离与工程记忆架构调整.md|2026-08-24｜支线模块隔离与工程记忆架构调整]] |
 | 2026-08-24 | maintenance | - | archived | gwayloo-brand-migration | [[日志/2026-08-24-GwayLoo品牌迁移.md|GwayLoo 品牌迁移]] |
 | 2026-08-24 | maintenance | - | archived | github-repository-url | [[日志/2026-08-24-GitHub仓库地址更新.md|GitHub 仓库地址更新]] |

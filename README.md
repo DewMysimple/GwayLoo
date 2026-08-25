@@ -1,35 +1,53 @@
 # GwayLoo
 
-GwayLoo 是一个使用 Vite、React、TypeScript 与 React Three Fiber 逐步重建的沉浸式水彩体验。迁移只替换工程实现；当前可见 UI、英文文案、字号、双阶段加载、滚动节奏、六组景观、声音行为和页面尾部均以只读原版源码为准。
+[English](./README.en.md) · 简体中文
 
-订阅、赠送、邮箱、Facebook、X 和奖项文字按项目约定保留为静态展示，不导航、不打开新窗口。项目不包含 WordPress、账户、商城、支付、订阅后端、CMS 或路由。
+GwayLoo 是一个以 React、TypeScript 和 React Three Fiber 构建的沉浸式水彩体验项目。它将连续滚动、诗句、水彩图层、六组景观视频、声音和页面尾部组织成一个可逐步维护与二次创作的网页体验。
 
-## 当前迁移状态
+[查看 GitHub 仓库](https://github.com/DewMysimple/GwayLoo)
 
-工程处于受回归保护的双运行时阶段：
+> 当前状态：项目仍在开发中。默认运行时是 legacy 兼容引擎，R3F 运行时通过查询参数预览；两者正在进行视觉和交互回归。
 
-- 默认：旧压缩 WebGL 引擎，由 React 的 `LegacyRuntimeBridge` 隔离加载，作为可运行和视觉验收基线。
-- `?runtime=legacy`：显式选择兼容基线。
-- `?runtime=r3f`：选择新的 React Three Fiber 预览运行时。
+## 项目概览
 
-R3F 版已经具备统一状态机、双加载器、原生连续滚动、三组诗句、六场景全屏视频、返回、声音、Restart、Benefits、五项 FAQ 和最终收尾；GLB 相机动画、纹理图集、KTX2、LUT、视频与音频均进入强类型资源定义和加载链。
+当前网页包含：
 
-R3F 水彩着色、纸张/噪声、SDF 遮罩、地面图层和后处理尚未达到原版逐帧视觉等价，因此默认运行时不会提前切换，也不会删除旧 `app.js`、兼容 DOM 或 `/wp-content/` 资源路径。只有完整视觉回归通过后才执行清除阶段。
+- 连续滚动的沉浸式体验入口；
+- 诗句、水彩图层、纸张和地面视觉元素；
+- 六组桌面/移动景观视频及 base/over 图层混合；
+- 用户手势触发的声音控制；
+- 返回、Restart、Benefits、FAQ 和体验收尾内容；
+- 可切换的 legacy 与 React Three Fiber 双运行时。
 
-只读事实基准位于 `C:\Users\Administrator\Desktop\网页(1)`。测试可以读取和启动它，但不得修改其中任何文件。
+项目不提供账户、商城、支付、订阅后端、CMS、WordPress 服务或独立路由。页面中的订阅、赠送、邮箱和奖项文字属于体验内容的静态展示。
 
-## 开发
+## 当前运行时
 
-要求 Node.js 20.19+，使用 npm：
+| 模式 | 访问方式 | 用途 |
+| --- | --- | --- |
+| legacy | `http://localhost:5173/` | 默认兼容基线与当前主要体验 |
+| legacy（显式） | `http://localhost:5173/?runtime=legacy` | 明确选择兼容运行时 |
+| R3F | `http://localhost:5173/?runtime=r3f` | 预览模块化 React Three Fiber 运行时 |
+
+R3F 已具备统一状态、加载器、视频景观、声音、滚动和页面收尾能力，但水彩着色、纸张噪声、SDF 遮罩、地面图层和后处理仍未达到原体验的逐帧视觉等价。因此 legacy 在迁移完成前继续作为默认入口和回退方案。
+
+## 快速开始
+
+要求 Node.js 20.19 或更高版本，并使用 npm：
 
 ```bash
 npm install
 npm run dev
 ```
 
-Vite 通常提供 `http://localhost:5173`。访问 `http://localhost:5173/?runtime=r3f` 可检查新运行时。
+开发服务器通常运行在 `http://localhost:5173`。构建并预览生产产物：
 
-质量命令：
+```bash
+npm run build
+npm run preview
+```
+
+## 验证命令
 
 ```bash
 npm run lint
@@ -37,66 +55,56 @@ npm run typecheck
 npm run test
 npm run check:assets
 npm run build
-npm run preview
 npm run test:e2e
 ```
 
-`test:e2e` 使用 Playwright 在桌面和移动视口对照只读原版，检查 legacy 几何、双加载阶段、连续滚动、六景观、FAQ、Restart、静态外链和控制台错误。
+Playwright 默认只验证当前仓库。维护者如果拥有私有参考基准，可以设置 `GWAYLOO_REFERENCE_ROOT`，恢复可选的参考站点几何对照；普通 GitHub 克隆不需要任何本机目录。
 
-## 目录与边界
+## 项目结构
 
 ```text
 src/
-├── app/                              # React 入口与受控第一加载器
-├── content/                          # ExperienceDefinition、诗句、尾部、场景与资源清单
+├── app/                              # React 应用入口与加载器
+├── content/                          # 文案、场景、资源与体验配置
 ├── features/experience/
-│   ├── runtime/                      # 统一运行时契约、reducer、输入、音频与性能分级
-│   ├── r3f/                          # R3F 世界、源资源管线与全屏视频景观
-│   ├── LegacyRuntimeBridge.tsx       # 旧引擎唯一入口
-│   └── OriginalExperienceTail.tsx    # 数据驱动的原版尾部结构
-├── styles/                           # 全局约束与主题令牌
-└── test/                             # Vitest 环境
+│   ├── runtime/                      # 运行时契约、状态、输入、音频与性能
+│   ├── r3f/                          # React Three Fiber 场景与资源管线
+│   ├── LegacyRuntimeBridge.tsx       # legacy 引擎的唯一 React 入口
+│   └── OriginalExperienceTail.tsx    # 页面尾部内容
+├── styles/                           # 全局样式与主题令牌
+└── test/                             # Vitest 测试环境
 
-tests/e2e/                            # Playwright 双视口回归
-public/wp-content/themes/davidwhyte/  # 验收期只读兼容运行时与原素材
-blender_scenebench/                   # 本地三维资产镜像与 Blender 二创工作区
-wiki_memory/                          # ADR、当前状态、知识和任务日志
+tests/e2e/                            # Playwright 桌面/移动端回归
+public/wp-content/themes/davidwhyte/  # 迁移期保留的兼容运行时资源
+blender_scenebench/                   # 独立的 Blender 场景工作区
+docs/                                 # 执行计划与维护文档
 ```
 
-`ExperienceDefinition` 是新运行时的配置入口；`sceneManifest` 已是 R3F 六场景视频的唯一来源。legacy 内部仍保留其硬编码映射，因此迁移验收前不要改变原目录和文件名。
+`ExperienceDefinition` 和 `sceneManifest` 是新运行时的主要配置入口。`public/` 中的兼容资源仍被 legacy 使用，R3F 通过类型化资源定义读取网页资产。
 
-## 内容与素材替换
+## Blender 场景工作区
 
-- 诗句和控制文字：`src/content/experience.ts`
-- 六场景标题、视频与源资源：`src/content/scenes.ts`
-- Benefits、FAQ、静态订阅与收尾：`src/content/tail.ts`
-- 原版纹理图集切片与图层时序：`src/content/atlas.ts`
+[`blender_scenebench/`](./blender_scenebench/) 是与网页运行时隔离的 Blender 5.0 场景工作区。Vite、`src/` 和正式网页运行时不会从该目录加载资源；工作区用于场景重建、可编辑美术资产、版本制作和验证。
 
-当前阶段的目标是技术等价迁移，不是视觉二次创作。替换素材前先建立独立创作分支，并保留 `desktop/mobile`、`base/over`、`1-6` 兼容关系。每次资源变化后至少运行 `npm run check:assets`、`npm run test:e2e` 和 `npm run build`。
+当前交付版本：
 
-## 基线、Git 与版权
+- 完整基准：`blender_scenebench/blender/GwayLoo_Scene_5_0.blend`
+- 去除非相机动画版本：`blender_scenebench/versions/no-animation/blender/GwayLoo_Scene_5_0_no_animation.blend`
 
-完整静态复刻保存在本地标签 `baseline/static-replica-2026-08-22`：
+场景包含 26 个可编辑水彩图层、相机动画、桌面/移动景观入口，以及集中管理的派生版本目录。`no-animation` 版本在第 3586 帧固定非相机状态，同时保留相机动画。
 
-```bash
-git show baseline/static-replica-2026-08-22
-```
+Blender 的构建、资源路径、版本制作和验证命令见 [`blender_scenebench/README.md`](./blender_scenebench/README.md)。
 
-每次任务完成后只创建本地 `git commit`，不执行 `git push`；也不会自动创建新分支。只有用户明确修改项目交付规则时才调整该边界。
+## 开发计划
 
-原始媒体、字体、模型、音频和文本仅限本地实验与技术参考。公开发布前必须完成品牌替换、素材授权或替换、外链审查和版权清理。
+网页运行时的双轨迁移、资源管线、交互回归和 legacy 清理门槛记录在 [`docs/EXECUTION_PLAN.md`](./docs/EXECUTION_PLAN.md)。在 R3F 通过完整视觉与交互验收前，不会删除 legacy 引擎、兼容 DOM 或 `/wp-content/` 路径。
 
-## 三维场景工作区
+## 使用边界与版权
 
-[`blender_scenebench/`](./blender_scenebench/) 是与正式网页隔离的本地美术工作区，保存三维体验资产副本、场景清单、重建脚本和 Blender 5.0 主文件。Vite、`src/` 和 `public/` 不引用该目录；原素材副本、生成缓存与 `.blend` 按本地实验策略不进入 Git。
+- 仓库当前没有声明统一的开源许可证；未看到明确授权时，不应把代码、媒体、字体、模型、音频或文本用于再发布。
+- 部分资源和 legacy 运行时用于本地技术研究与兼容性验证，公开发布前仍需完成品牌替换、素材授权和外链审查。
+- 本项目不声称拥有原始体验素材或第三方资源的再分发权。
 
-使用和重建说明见 [`blender_scenebench/README.md`](./blender_scenebench/README.md)。Blender 专属工程记忆见 [`blender_scenebench/wiki_memory/`](./blender_scenebench/wiki_memory/)。
+## 项目状态说明
 
-## 工程记忆
-
-工程记忆集中在 [`wiki_memory/`](./wiki_memory/)，不散落到项目根目录：
-
-```bash
-python wiki_memory/工具/memory_lint.py index
-python wiki_memory/工具/memory_lint.py check
-```
+网页代码与 Blender 工作区共用同一个 Git 工程，但 Blender 工作区不属于网页的运行时依赖。生成缓存、源素材快照和本地测试产物按各自 `.gitignore` 规则管理；可交付的源码、配置、文档和版本文件保留在仓库中。

@@ -114,7 +114,7 @@ Agent 可以报告问题并提出修复方案，但不能在未获授权时批�
 - 应用入口是根目录 `index.html` 和 `src/main.tsx`；开发使用 `npm run dev`，构建使用 `npm run build`。
 - 旧 WebGL 运行时位于 `public/wp-content/themes/davidwhyte/app.js`，仅由 `src/features/experience/LegacyRuntimeBridge.tsx` 加载。默认保持 legacy；`?runtime=r3f` 是新 React Three Fiber 运行时的验收入口。
 - R3F 逐帧视觉等价前，不删除 `LegacyRuntimeBridge`、旧脚本、旧样式、隐藏契约节点或 `/wp-content/` 兼容路径。
-- `C:/Users/Administrator/Desktop/网页(1)` 是只读源码与交互事实基准，只能启动、读取和测量，不能修改。
+- 外部参考基准不是公开仓库依赖；如需对照测试，维护者通过 `GWAYLOO_REFERENCE_ROOT` 显式提供只读目录，只能启动、读取和测量，不能修改。
 - 原始素材当前仅限本地实验。任何公开发布前，必须完成品牌替换、素材授权或替换以及外链审查。
 - 迁移前完整静态副本由本地 Git 标签 `baseline/static-replica-2026-08-22` 保存；当前主目录不再保留 WordPress 外壳。
 - 资源替换优先编辑 `src/content/`；在 WebGL 引擎重写前，视频仍保持 `desktop/mobile`、`base/over` 和 `1-6` 的命名兼容。

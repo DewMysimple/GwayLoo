@@ -25,7 +25,7 @@
 - 新实现放在 `src/features/experience/r3f/`、`src/features/experience/runtime/` 和 `src/content/`。
 - 在新实现达到视觉和交互验收标准前，不切换默认运行时，不删除 `app.js`、旧样式、兼容 DOM 或 `/wp-content/` 资源路径。
 - `blender_scenebench/` 是本地美术和 Blender 工作区，不作为 Vite 正式运行时资源来源。
-- 不修改 `C:/Users/Administrator/Desktop/网页(1)`；它只允许读取、启动和测量。
+- 公开仓库不依赖外部参考目录；维护者如设置 `GWAYLOO_REFERENCE_ROOT`，该目录只用于只读启动、测量和可选对照。
 - 保留当前工作区已有修改；不得执行 `git reset`、`git checkout` 或批量删除。
 - `app.js` 引用了 `/wp-content/themes/davidwhyte/app/427.js`，但当前仓库和只读基线均未发现该文件。第一阶段必须确认它是否属于实际可达路径；不能自行伪造或静默忽略。
 

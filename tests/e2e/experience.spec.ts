@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+const hasReferenceFixture = Boolean(process.env.GWAYLOO_REFERENCE_ROOT);
+
 async function readLayoutGeometry(page: import('@playwright/test').Page) {
   return page.evaluate(() => {
     const tail = document.querySelector<HTMLElement>('.advantages-section');
@@ -14,6 +16,10 @@ async function readLayoutGeometry(page: import('@playwright/test').Page) {
 }
 
 test('legacy geometry remains aligned with the read-only source', async ({ page }) => {
+  test.skip(
+    !hasReferenceFixture,
+    'Set GWAYLOO_REFERENCE_ROOT to enable the optional private reference comparison.',
+  );
   await page.goto('http://127.0.0.1:4177/?skip', { waitUntil: 'networkidle' });
   await page.waitForTimeout(1_000);
   const reference = await readLayoutGeometry(page);
