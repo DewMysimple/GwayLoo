@@ -57,6 +57,10 @@ interface PaperEntry {
   identity: PaperIdentityContract;
   /** Hidden GLB authoring mesh retained only for raycasting and transforms. */
   mesh: THREE.Mesh;
+  /** Exact world transform captured from the source GLB paper container. */
+  sourceWorldPosition: THREE.Vector3;
+  sourceWorldScale: THREE.Vector3;
+  sourceWorldQuaternion: THREE.Quaternion;
   transform: THREE.Object3D;
   /** Source TZ group start plus papersContainer.show(name, groupIndex) delay. */
   revealStartAt: number;
@@ -154,6 +158,10 @@ export class WatercolorView {
     this.scrollCamera.init(gltf);
     scrollController.setCameraDuration(this.scrollCamera.duration);
     this.scene.add(gltf.scene);
+    // The original Paper container is created from the loaded mesh's world
+    // transform. Resolve the GLB hierarchy before extracting any paper so a
+    // nested parent rotation/scale cannot fall back to local coordinates.
+    gltf.scene.updateMatrixWorld(true);
     this.paintingTitles.init(gltf);
     this.scene.add(this.paintingTitles.group);
     this.grassLayer.init();
@@ -258,18 +266,18 @@ export class WatercolorView {
       const bounds = mesh.geometry.boundingBox!;
       const width = Math.abs(bounds.min.z) + Math.abs(bounds.max.z);
       const height = Math.abs(bounds.min.y) + Math.abs(bounds.max.y);
+      const sourceWorldPosition = mesh.getWorldPosition(new THREE.Vector3());
+      const sourceWorldScale = mesh.getWorldScale(new THREE.Vector3());
+      const sourceWorldQuaternion = mesh.getWorldQuaternion(new THREE.Quaternion());
       const transform = new THREE.Object3D();
-      transform.position.copy(mesh.position);
-      if (mesh.parent) transform.position.add(mesh.parent.position);
+      transform.position.copy(sourceWorldPosition);
       transform.scale.set(1, height, width);
       // The source prepares each visible instance from the paper container's
       // world quaternion. Using only the `layers` parent's yaw silently drops
       // authored rotations on nodes such as tree_1 and viaduc_1, leaving the
       // visible paper out of alignment with its GLB raycast proxy, ground and
       // shadow projection.
-      const worldQuaternion = new THREE.Quaternion();
-      mesh.getWorldQuaternion(worldQuaternion);
-      const worldEuler = new THREE.Euler().setFromQuaternion(worldQuaternion, "XYZ");
+      const worldEuler = new THREE.Euler().setFromQuaternion(sourceWorldQuaternion, "XYZ");
       transform.rotation.y = -worldEuler.y;
       transform.rotation.x -= Math.PI;
       transform.rotation.z = Math.PI / 2;
@@ -285,6 +293,9 @@ export class WatercolorView {
         index,
         identity,
         mesh,
+        sourceWorldPosition,
+        sourceWorldScale,
+        sourceWorldQuaternion,
         transform,
         revealStartAt: schedule.startAt,
         revealDelay: schedule.delay,
