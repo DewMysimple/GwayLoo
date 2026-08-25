@@ -16,6 +16,7 @@ supersedes: null
 | 时间 | 类型 | 目标 | 状态 | 主题 | 日志 |
 | --- | --- | --- | --- | --- | --- |
 | 2026-08-25 | bug | - | archived | circular-cursor-indicator-fix | [[日志/2026-08-25-自定义光标圆形指示器修复与QA.md|自定义光标圆形指示器修复与 QA]] |
+| 2026-08-25 | bug | - | archived | ui-text-cursor-distortion-boundary | [[日志/2026-08-25-滚动文字层光标扰动边界与QA.md|滚动文字层光标扰动边界与 QA]] |
 | 2026-08-25 | feature | 继续从 Branch 的原始提取源码还原 Paper reveal 生命周期，修正同一 `startAt` 分组、首层入口延迟、Ground/Cutout 同步启动和浏览器 QA 的中间态验证；不改变用户已关注的水彩材质、波纹密度、默认 delivery profile 或设备降级策略。 | archived | source-paper-grouped-reveal-delay | [[日志/2026-08-25-源码Paper分组Reveal延迟与层同步QA.md|2026-08-25｜源码 Paper 分组 Reveal 延迟与层同步 QA]] |
 | 2026-08-25 | bug | - | archived | fluid-brush-source-mapping-and-delivery-visual-gain | [[日志/2026-08-25-流体笔刷源参数与可见波纹幅度收敛QA.md|流体笔刷源参数与可见波纹幅度收敛 QA]] |
 | 2026-08-25 | feature | - | archived | global-ground-background-shadow-reconstruction | [[日志/2026-08-25-全局Ground背景与阴影职责重建及交付QA.md|全局 Ground、Background 与阴影职责重建及交付 QA]] |

@@ -33,6 +33,8 @@ export class UIView {
   private _device: DeviceKind;
   private _visible = false;
   private _rect = { x: 0, y: 0, w: 0, h: 0 };
+  private _cursorTarget = new THREE.Vector2(1000, 1000);
+  private _hasCursorTarget = false;
 
   constructor(textCanvas: TextCanvas, device: DeviceKind = "desktop") {
     this._textCanvas = textCanvas;
@@ -64,16 +66,18 @@ export class UIView {
       uniforms: {
         map: { value: this._textCanvas.texture },
         uNoise: { value: noise },
-        uCursorPosition: { value: new THREE.Vector2(0.5, 0.5) },
+        // The source starts the interaction ring off-canvas and only arms it
+        // after the pointer enters the UI plane.
+        uCursorPosition: { value: new THREE.Vector2(1000, 1000) },
         uCursorFactor: { value: 1 },
         uQuadRatio: { value: rect.w / rect.h },
         uScrollProgress: { value: 0 },
         uWindowHeight: { value: rect.h / Math.max(this._textCanvas.contentHeight, 1) },
         uUvScrollProgress: { value: 0 },
-        uVisibleArea: { value: 1 },
+        uVisibleArea: { value: 0.95 },
         uClampFadeOverride: { value: 0 },
         uFadeProgress: { value: 0 },
-        uFadeNoiseSize: { value: 2.2 },
+        uFadeNoiseSize: { value: 0.25 },
         uWriteProgress: { value: 0 },
         uAlpha: { value: 0 },
       },
@@ -111,6 +115,9 @@ export class UIView {
   /** 隐藏后重置（重启 / 再次进入） */
   reset(): void {
     const u = this._material!.uniforms;
+    this._cursorTarget.set(1000, 1000);
+    (u.uCursorPosition.value as THREE.Vector2).set(1000, 1000);
+    this._hasCursorTarget = false;
     u.uFadeProgress.value = 0;
     u.uWriteProgress.value = 0;
     u.uAlpha.value = 0;
@@ -135,12 +142,27 @@ export class UIView {
   /** 更新鼠标位置（四边形内 uv 空间） */
   setCursor(px: number, py: number): void {
     if (!this._material) return;
-    const uv = this._material.uniforms.uCursorPosition.value as THREE.Vector2;
-    uv.set((px - this._rect.x) / this._rect.w, 1 - (py - this._rect.y) / this._rect.h);
+    const x = (px - this._rect.x) / this._rect.w;
+    const y = 1 - (py - this._rect.y) / this._rect.h;
+    // Q5 is raycast against the UI plane. Outside that plane the source keeps
+    // the last target instead of continuously moving the distortion ring from
+    // the DOM layer into the surrounding canvas.
+    if (x < 0 || x > 1 || y < 0 || y > 1) return;
+    this._cursorTarget.set(x, y);
+    const current = this._material.uniforms.uCursorPosition.value as THREE.Vector2;
+    if (!this._hasCursorTarget) {
+      current.copy(this._cursorTarget);
+      this._hasCursorTarget = true;
+    }
   }
 
-  update(scrollProgress: number, time: number): void {
+  update(scrollProgress: number, time: number, delta = 1 / 60): void {
     if (!this._material) return;
+    if (this._hasCursorTarget) {
+      const current = this._material.uniforms.uCursorPosition.value as THREE.Vector2;
+      const alpha = 1 - Math.exp(-6 * Math.min(delta, 0.04));
+      current.lerp(this._cursorTarget, alpha);
+    }
     this._material.uniforms.uScrollProgress.value = scrollProgress;
     // 与原站一致：噪声漂移由滚动距离驱动（而非时间）
     this._material.uniforms.uUvScrollProgress.value =

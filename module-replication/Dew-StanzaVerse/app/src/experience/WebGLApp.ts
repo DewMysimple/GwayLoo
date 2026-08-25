@@ -81,7 +81,7 @@ export class WebGLApp {
     const sample = scrollController.sample;
     const triggerTime = sample.rawProgress * this._watercolor.scrollCamera.duration;
     this._watercolor.update(this._time, delta, sample.cameraTime, triggerTime, this.fogState, this.renderer);
-    this._ui.update(scrollController.progress, this._time);
+    this._ui.update(scrollController.progress, this._time, delta);
     this._poem.update(this._time, scrollController.progress);
     this._fullPaint.update();
 
