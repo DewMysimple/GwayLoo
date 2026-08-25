@@ -5,7 +5,7 @@ This directory is an isolated local art workspace for studying and rebuilding th
 ## Delivered structure
 
 - `source_snapshot/`: local-only byte copies of the current runtime assets, fonts, legacy runtime and extracted R3F configuration.
-- `blender/Verminoble_Scene_Mirror_5_0.blend`: tracked Blender 5.0 master file; automatic `.blend1/.blend2` backups remain ignored.
+- `blender/Verminoble_Scene_Mirror_5_0.blend`: tracked Blender 5.0 master file. Its runtime media paths point to the tracked `public/.../xp` assets; the generated Ground PNG and converted annotation font are packed into the file so a normal repository checkout does not resolve through the ignored `source_snapshot/` or `generated/` directories. Automatic `.blend1/.blend2` backups remain ignored.
 - `manifests/asset_manifest.json`: size, SHA-256, format, purpose and media metadata.
 - `manifests/scene_manifest.json`: GLB structure, camera timing, watercolor UV/SDF rectangles, layer schedule and hotspots.
 - `tools/`: reproducible extraction, conversion, Blender build, validation and render scripts.
@@ -53,6 +53,12 @@ powershell -ExecutionPolicy Bypass -File scene_workbench/tools/prepare_support_a
 python scene_workbench/tools/generate_manifests.py
 & 'F:\Blender\blender.exe' --background --factory-startup --python scene_workbench/tools/build_blender_scene.py
 & 'F:\Blender\blender.exe' --background --factory-startup scene_workbench/blender/Verminoble_Scene_Mirror_5_0.blend --python scene_workbench/tools/validate_blend.py
+```
+
+If the master file was generated before the portable-asset change, repair its paths without rebuilding the scene:
+
+```powershell
+& 'F:\Blender\blender.exe' --background --factory-startup --python scene_workbench/tools/repair_blend_assets.py
 ```
 
 To regenerate 30 validation renders (seven source animation frames, one artist overview, five artist frames including the reported frame 690, one material preview, four face/oblique/grazing/back material-angle previews, one tree-and-grass preview, one background-card preview, four source-camera frames and six landscape frames):

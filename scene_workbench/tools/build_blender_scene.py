@@ -13,6 +13,10 @@ from typing import Any
 
 import bpy
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from portable_blend_assets import make_blend_assets_portable, relative_to_blend as portable_relative_to_blend
+
 
 WORKBENCH = Path(__file__).resolve().parents[1]
 SNAPSHOT = WORKBENCH / "source_snapshot"
@@ -80,8 +84,7 @@ def require(path: Path) -> Path:
 
 
 def relative_to_blend(path: Path) -> str:
-    relative = os.path.relpath(path.resolve(), OUTPUT.parent.resolve()).replace("\\", "/")
-    return f"//{relative}"
+    return portable_relative_to_blend(path, OUTPUT.parent)
 
 
 def set_color_management(scene: bpy.types.Scene) -> None:
@@ -1566,19 +1569,6 @@ def build_video_scene(scene_id: int, device: str, width: int, height: int) -> bp
     return scene
 
 
-def make_paths_relative() -> None:
-    for image in bpy.data.images:
-        if image.filepath and not image.filepath.startswith("//"):
-            absolute = Path(bpy.path.abspath(image.filepath))
-            if absolute.exists() and WORKBENCH in absolute.parents:
-                image.filepath = relative_to_blend(absolute)
-    for font in bpy.data.fonts:
-        if font.filepath and font.filepath != "<builtin>" and not font.filepath.startswith("//"):
-            absolute = Path(bpy.path.abspath(font.filepath))
-            if absolute.exists() and WORKBENCH in absolute.parents:
-                font.filepath = relative_to_blend(absolute)
-
-
 def configure_artist_workspace(
     animation_scene: bpy.types.Scene,
     artist_scene: bpy.types.Scene,
@@ -1647,7 +1637,7 @@ def main() -> None:
     REPORT.parent.mkdir(parents=True, exist_ok=True)
     selected_object = configure_artist_workspace(animation_scene, artist_scene, source_scene)
     bpy.ops.wm.save_as_mainfile(filepath=str(OUTPUT), check_existing=False)
-    make_paths_relative()
+    portable_assets = make_blend_assets_portable(OUTPUT.parent)
     bpy.ops.wm.save_as_mainfile(filepath=str(OUTPUT), check_existing=False)
     report = {
         "blender_version": bpy.app.version_string,
@@ -1662,10 +1652,12 @@ def main() -> None:
         "total_scenes": len(bpy.data.scenes),
         "external_images": len(bpy.data.images),
         "external_fonts": len([font for font in bpy.data.fonts if font.filepath and font.filepath != "<builtin>"]),
+        "portable_assets": portable_assets,
         "relative_external_paths": all(
-            not image.filepath or image.filepath.startswith("//") for image in bpy.data.images
+            not image.filepath or image.filepath.startswith("//") or image.packed_file
+            for image in bpy.data.images
         ) and all(
-            not font.filepath or font.filepath == "<builtin>" or font.filepath.startswith("//")
+            not font.filepath or font.filepath == "<builtin>" or font.filepath.startswith("//") or font.packed_file
             for font in bpy.data.fonts
         ),
     }

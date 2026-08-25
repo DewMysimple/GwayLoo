@@ -3,7 +3,7 @@ type: moc
 status: active
 kind: process
 importance: high
-updated: 2026-08-24
+updated: 2026-08-25
 topic: work-log-index
 source_logs: []
 supersedes: null
@@ -15,6 +15,7 @@ supersedes: null
 
 | 时间 | 类型 | 目标 | 状态 | 主题 | 日志 |
 | --- | --- | --- | --- | --- | --- |
+| 2026-08-25 | bug | - | archived | blender-asset-portability | [[日志/2026-08-25-Blender文件资源可移植性修复.md|Blender 文件资源可移植性修复]] |
 | 2026-08-24 | maintenance | - | archived | module-replication-memory-boundary | [[日志/2026-08-24-支线模块隔离与工程记忆架构调整.md|2026-08-24｜支线模块隔离与工程记忆架构调整]] |
 | 2026-08-24 | maintenance | - | archived | gwayloo-brand-migration | [[日志/2026-08-24-GwayLoo品牌迁移.md|GwayLoo 品牌迁移]] |
 | 2026-08-24 | maintenance | - | archived | github-repository-url | [[日志/2026-08-24-GitHub仓库地址更新.md|GitHub 仓库地址更新]] |

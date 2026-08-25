@@ -12,6 +12,7 @@ import bpy
 WORKBENCH = Path(__file__).resolve().parents[1]
 REPORT = WORKBENCH / "reports/blender-validation.json"
 MANIFEST = WORKBENCH / "manifests/scene_manifest.json"
+PUBLIC_ASSETS = WORKBENCH.parent / "public/wp-content/themes/davidwhyte/resources/assets/xp"
 REQUIRED_SHARED_COLLECTIONS = {
     "EDITABLE_WATERCOLOR",
     "PROCEDURAL_GRASS",
@@ -349,7 +350,7 @@ def main() -> None:
             if image.source == "FILE" and (
                 image.size[0] == 0
                 or image.size[1] == 0
-                or not Path(bpy.path.abspath(image.filepath)).exists()
+                or (image.packed_file is None and not Path(bpy.path.abspath(image.filepath)).exists())
             ):
                 missing_image_data = True
         if len(image_nodes) < 2 or missing_image_data:
@@ -589,26 +590,41 @@ def main() -> None:
 
     missing_paths: list[str] = []
     non_relative: list[str] = []
+    non_portable: list[str] = []
     for image in bpy.data.images:
         if not image.filepath:
+            continue
+        if image.packed_file is not None:
             continue
         if not image.filepath.startswith("//"):
             non_relative.append(image.filepath)
         absolute = Path(bpy.path.abspath(image.filepath))
         if not absolute.exists():
             missing_paths.append(str(absolute))
+        try:
+            absolute.resolve().relative_to(PUBLIC_ASSETS.resolve())
+        except ValueError:
+            non_portable.append(image.filepath)
     for font in bpy.data.fonts:
         if not font.filepath or font.filepath == "<builtin>":
+            continue
+        if font.packed_file is not None:
             continue
         if not font.filepath.startswith("//"):
             non_relative.append(font.filepath)
         absolute = Path(bpy.path.abspath(font.filepath))
         if not absolute.exists():
             missing_paths.append(str(absolute))
+        try:
+            absolute.resolve().relative_to(PUBLIC_ASSETS.resolve())
+        except ValueError:
+            non_portable.append(font.filepath)
     if missing_paths:
         fail(f"Missing external image/movie paths: {missing_paths}", failures)
     if non_relative:
         fail(f"Non-relative image/movie paths: {non_relative}", failures)
+    if non_portable:
+        fail(f"Non-portable external asset paths: {non_portable}", failures)
 
     result = {
         "blender_version": bpy.app.version_string,
@@ -642,8 +658,11 @@ def main() -> None:
         "camera_runtime_control": camera_control.name if camera_control else None,
         "hotspots": hotspot_count,
         "video_scenes": len(expected_video_scenes) - len(missing_video_scenes),
-        "external_images_and_movies": len([image for image in bpy.data.images if image.filepath]),
-        "external_fonts": len([font for font in bpy.data.fonts if font.filepath and font.filepath != "<builtin>"]),
+        "external_images_and_movies": len([image for image in bpy.data.images if image.filepath and image.packed_file is None]),
+        "packed_images": len([image for image in bpy.data.images if image.packed_file is not None]),
+        "external_fonts": len([font for font in bpy.data.fonts if font.filepath and font.filepath != "<builtin>" and font.packed_file is None]),
+        "packed_fonts": len([font for font in bpy.data.fonts if font.packed_file is not None]),
+        "portable_external_assets": not non_portable,
     }
     REPORT.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(json.dumps(result, ensure_ascii=False))
