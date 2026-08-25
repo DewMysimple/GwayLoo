@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import gsap from "gsap";
 import { resources } from "../../core/Resources";
 import { shadowFragmentShader, shadowVertexShader } from "../../shaders/shadow";
 import { GLSL_FOG, GLSL_UTILS } from "../../shaders/chunks";
@@ -155,6 +156,16 @@ export class ShadowProjection implements ShadowProjectionPipeline {
     attribute.setX(index, alpha);
     attribute.needsUpdate = true;
     this._mesh.instanceMatrix.needsUpdate = true;
+  }
+
+  /** Source Shadows.hideAll(): fade every projected shadow in parallel. */
+  hideAll(duration = 0.5): gsap.core.Timeline {
+    const timeline = gsap.timeline();
+    this._sources.forEach((source) => {
+      gsap.killTweensOf(source);
+      timeline.to(source, { alpha: 0, duration, ease: "sine.inOut" }, 0);
+    });
+    return timeline;
   }
 
   render(renderer: THREE.WebGLRenderer, camera: THREE.Camera): void {

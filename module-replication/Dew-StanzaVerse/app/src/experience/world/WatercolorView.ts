@@ -83,6 +83,12 @@ interface GroundEntry {
   simulationRemap: THREE.Vector4;
 }
 
+interface HideAllOptions {
+  /** QA-only deterministic reset; runtime Restart uses the source fade. */
+  immediate?: boolean;
+  duration?: number;
+}
+
 export class WatercolorView {
   scene = new THREE.Scene();
   scrollCamera!: ScrollCamera;
@@ -122,6 +128,8 @@ export class WatercolorView {
   private _paperSimulationBoxes = new Map<number, THREE.Vector4>();
   private _groundSimulationBoxes = new Map<number, THREE.Vector4>();
   private _time = 0;
+  private _isHiding = false;
+  private _hideTimeline: gsap.core.Timeline | null = null;
 
   private _definition: ExperienceDefinition;
 
@@ -464,7 +472,7 @@ export class WatercolorView {
       // Source triggers the whole paper group at TZ.startAt; the stagger is a
       // delay on the shared Paper/Cutout/Shadow/Ground animation timeline,
       // not an additional scroll-camera threshold.
-      if (!paper.revealed && triggerTime >= paper.revealStartAt) {
+      if (!paper.revealed && !this._isHiding && triggerTime >= paper.revealStartAt) {
         this._reveal(paper);
       }
       paper.transform.rotation.z = -paper.state.rotationZ;
@@ -487,15 +495,52 @@ export class WatercolorView {
     }
   }
 
-  /** 全部隐藏（重启用） */
-  hideAll(): void {
+  /** Source papersContainer.hideAll(): fade Paper/Cutout/Ground together. */
+  hideAll(options: HideAllOptions = {}): gsap.core.Timeline {
+    this._hideTimeline?.kill();
+    this._hideTimeline = null;
+    this._isHiding = false;
+    const duration = Math.max(0, options.duration ?? 0.5);
+    this.papers.forEach((paper) => {
+      paper.tween?.kill();
+      paper.tween = null;
+    });
+    this.paintingTitles.hideAll();
+    this.grassLayer.reset();
+    this._leavesLayer?.reset();
+
+    if (options.immediate) {
+      this._resetHiddenLayers();
+      return gsap.timeline();
+    }
+
+    this._isHiding = true;
+    const timeline = gsap.timeline();
+    this.papers.forEach((paper) => {
+      timeline.to(paper.state, { alpha: 0, duration, ease: "sine.inOut" }, 0);
+    });
+    this._groundStates.forEach((state) => {
+      timeline.to(state, { uAlpha: 0, duration, ease: "sine.inOut" }, 0);
+    });
+    timeline.add(this.cutoutShadow.hideAll(duration), 0);
+    timeline.add(this.shadowProjection.hideAll(duration), 0);
+    timeline.call(() => {
+      this._resetHiddenLayers();
+      this._isHiding = false;
+      this._hideTimeline = null;
+    }, [], duration);
+    this._hideTimeline = timeline;
+    return timeline;
+  }
+
+  private _resetHiddenLayers(): void {
     this.papers.forEach((paper) => {
       paper.revealed = false;
-      paper.tween?.kill();
       paper.state.alpha = 0;
       paper.state.curve = 1;
       paper.state.reveal = 0;
       paper.state.rotationZ = -Math.PI / 2;
+      paper.tween = null;
     });
     this._groundStates.forEach((state) => { state.uAlpha = 0; });
     this._groundVisible.fill(false);
@@ -503,9 +548,6 @@ export class WatercolorView {
       (this._groundMaterial.uniforms.uAlpha.value as number[]).fill(0);
       (this._groundMaterial.uniforms.uVisible.value as boolean[]).fill(false);
     }
-    this.paintingTitles.hideAll();
-    this.grassLayer.reset();
-    this._leavesLayer?.reset();
     this.cutoutShadow.reset();
     this.shadowProjection.reset();
   }

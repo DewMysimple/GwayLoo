@@ -115,6 +115,16 @@ export class CutoutShadowLayer {
     gsap.fromTo(state, { value: 0 }, { value: 1, duration: 0.4, ease: "sine.inOut" });
   }
 
+  /** Source Cutouts.hideAll(): fade every active SDF cutout in parallel. */
+  hideAll(duration = 0.5): gsap.core.Timeline {
+    const timeline = gsap.timeline();
+    this._alphaStates.forEach((state) => {
+      gsap.killTweensOf(state);
+      timeline.to(state, { value: 0, duration, ease: "sine.inOut" }, 0);
+    });
+    return timeline;
+  }
+
   update(time: number, fogState: { opaque: number; occulted: number }): void {
     if (!this._material || !this._alphaAttribute) return;
     this._material.uniforms.uTime.value = time;
