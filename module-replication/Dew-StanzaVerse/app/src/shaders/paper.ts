@@ -93,7 +93,9 @@ void main() {
     vRevealPointsPos[1] = uRevealPointsPos[index][1].xy;
     vRevealPointsPos[2] = uRevealPointsPos[index][2].xy;
     vRevealPointsPos[3] = uRevealPointsPos[index][3].xy;
-    vSimulationUv = remapAtlasUv(1. - uv, simulationBox, simulationRemap);
+    // Source flips the paper's simulation Y before the box remap; X is
+    // already handled by the raycast/paint intersection convention.
+    vSimulationUv = remapAtlasUv(vec2(uv.x, 1. - uv.y), simulationBox, simulationRemap);
 
     vec3 _position = position;
 
@@ -206,6 +208,12 @@ varying vec2 vRevealPointsPos[REVEAL_POINTS_COUNT];
 uniform sampler2D uSimulationTexture;
 varying vec2 vSimulationUv;
 
+// The extracted simulation can carry a full-tile velocity field, but the
+// delivery paper only reveals a restrained wet response. Without this display
+// gain, a single pointer stroke drives the 0.05..0.15 UV offset threshold over
+// the whole sheet and presents as an endless high-frequency shimmer.
+const float DELIVERY_SIMULATION_VISUAL_GAIN = 0.04;
+
 // Fog
 uniform vec2 uFogState;
 
@@ -287,12 +295,13 @@ void main() {
 	vec2 dir = -data.rg;
 	float vel = data.b;
 	float intensity = data.a;
-	float blend = smoothstep(0., 0.1, vel);
-	float offset = smoothstep(0.05, 0.15, vel);
+	float visibleVel = vel * DELIVERY_SIMULATION_VISUAL_GAIN;
+	float blend = smoothstep(0., 0.1, visibleVel);
+	float offset = smoothstep(0.05, 0.15, visibleVel);
 
 	vec2 paintOffsetUv = uv;
 	float textureEdge = min(smoothstep(0., -0.05, dist), smoothstep(1., 0.95, vUv.y));
-	paintOffsetUv += normalize(dir + vec2(0.0001)) * smoothstep(0.001, 0.05, vel) * 0.01 * textureEdge;
+	paintOffsetUv += normalize(dir + vec2(0.0001)) * smoothstep(0.001, 0.05, visibleVel) * 0.01 * textureEdge;
 	paintOffsetUv.x = 1. - paintOffsetUv.x;
 	paintOffsetUv = remapAtlasUv(paintOffsetUv, vPaintAtlasRemap);
 

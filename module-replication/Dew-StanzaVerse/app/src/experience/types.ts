@@ -55,10 +55,12 @@ export interface BrushSample {
   sourceScale: number;
   /** Paper projection in CSS pixels, used to keep the brush circular on screen. */
   projectedSize: THREE.Vector2;
-  /** Radius in the paper's complete simulation tile (paper + ground). */
+  /** Source external-force ellipse radius in the complete simulation tile. */
   previousRadius: THREE.Vector2;
   currentRadius: THREE.Vector2;
-  /** Visible desktop brush diameter after projection, exposed to QA. */
+  /** Source paper projection/depth factor used by cursorSize. */
+  sourceScreenSpaceSize: number;
+  /** Reference desktop cursor diameter used by the interaction contract/QA. */
   visibleDiameter: number;
   /** Pixel dimensions of this paper's packed simulation tile. */
   simulationSize: THREE.Vector2;

@@ -290,7 +290,6 @@ export class PaintManager {
     this._callbacks.onCursorChange("paint");
     if (paintingMovement) {
       const projectedSize = this._view.getHitProjectedSize(hit, this._view.scrollCamera.camera);
-      const simulationBox = this._view.getSimulationBox(hit);
       const currentUv = this._view.mapHitUvToSimulation(hit);
       const storedPrevious = this._previousPaperUvs.get(hit.paperIndex);
       const storedRadius = this._previousPaperRadii.get(hit.paperIndex);
@@ -298,13 +297,13 @@ export class PaintManager {
         ? storedPrevious.clone()
         : currentUv.clone();
       const velocity = currentUv.clone().sub(previousUv);
-      const largestProjectedSide = Math.max(projectedSize.x, projectedSize.y, 1);
       const sourceInputMove = new THREE.Vector2(
         pendingInputVelocity.x * window.innerWidth * 0.5,
         -pendingInputVelocity.y * window.innerHeight * 0.5,
       );
       const normalizedSpeed = THREE.MathUtils.clamp(
-        Math.max(move.length() * frameCompensation, sourceInputMove.length()) / largestProjectedSide,
+        Math.max(move.length() * frameCompensation, sourceInputMove.length())
+          / Math.max(projectedSize.x, projectedSize.y, 1),
         0,
         SOURCE_SPEED_MAX,
       );
@@ -316,37 +315,46 @@ export class PaintManager {
           SOURCE_SPEED_MAX,
           SOURCE_HOVER_SCALE_MIN,
           SOURCE_HOVER_SCALE_MAX,
-        );
+      );
       const visibleDiameter = SOURCE_CURSOR_DIAMETER * sourceScale;
-
-      // Convert the desired screen-space circle into a region-local ellipse. The
-      // shader evaluates this ellipse in the packed simulation tile, so its
-      // projection remains circular even on tall or wide pieces of paper.
-      const paperBoxWidth = Math.max(simulationBox.z - simulationBox.x, 1e-4);
-      const paperBoxHeight = Math.max(simulationBox.w - simulationBox.y, 1e-4);
-      const fullProjectedWidth = Math.max(projectedSize.x / paperBoxWidth, 1);
-      const fullProjectedHeight = Math.max(projectedSize.y / paperBoxHeight, 1);
+      const sourceScreenSpaceSize = this._view.getPaperSourceScreenSpaceSize(
+        hit.paperIndex,
+        this._view.scrollCamera.camera,
+      );
+      const sourceCursorBase = this._pointerDown ? 500 : 400;
+      const sourceCursorRadius = sourceCursorBase
+        / (sourceScreenSpaceSize * 512)
+        * sourceScale
+        * 0.5;
+      const region = this._simulation.regionForPaper(hit.paperIndex);
+      // The extracted external-force shader corrects only the tile's authored
+      // aspect ratio; keep that exact ellipse instead of re-projecting a CSS
+      // diameter through the paper box.
       const currentRadius = new THREE.Vector2(
-        (visibleDiameter * 0.5) / fullProjectedWidth,
-        (visibleDiameter * 0.5) / fullProjectedHeight,
+        sourceCursorRadius,
+        sourceCursorRadius * (1 + (region.ratio - 1) * 0.5),
       );
       const previousRadius = this._activePaperIndex === hit.paperIndex && storedRadius
         ? storedRadius.clone()
         : currentRadius.clone();
-      const region = this._simulation.regionForPaper(hit.paperIndex);
       const sample: BrushSample = {
         paperIndex: hit.paperIndex,
         previousUv,
         currentUv,
-        ndcVelocity: ndcVelocity.clone().multiplyScalar(frameCompensation),
+        // The extracted Simulation.update receives the damped NDC velocity
+        // directly. Frame compensation belongs to the interaction gate/size
+        // curve, not to the external-force vector; applying it here makes a
+        // high-refresh browser inject a denser, over-energetic ripple field.
+        ndcVelocity: ndcVelocity.clone(),
         normalizedSpeed,
         sourceScale,
         projectedSize,
         previousRadius,
         currentRadius,
+        sourceScreenSpaceSize,
         visibleDiameter,
-        simulationSize: new THREE.Vector2(region?.width ?? 1, region?.height ?? 1),
-        paperRatio: fullProjectedWidth / fullProjectedHeight,
+        simulationSize: new THREE.Vector2(region.width, region.height),
+        paperRatio: region.ratio,
         velocity,
         pressed: this._pointerDown,
         intensity: 0.06,

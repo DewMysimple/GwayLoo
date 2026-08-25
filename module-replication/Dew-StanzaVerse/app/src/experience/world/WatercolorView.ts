@@ -685,6 +685,32 @@ export class WatercolorView {
     );
   }
 
+  /**
+   * Reconstruct the source Paper.computeScreenspaceSize → screenSpaceSize
+   * chain. The source does not derive the fluid cursor from CSS pixels: it
+   * projects the authored GLB bounds, folds in view depth, then normalizes the
+   * 400/500px cursor against that scalar.
+   */
+  getPaperSourceScreenSpaceSize(paperIndex: number, camera: THREE.Camera): number {
+    const paper = this.papers[paperIndex];
+    const bounds = paper?.mesh.geometry.boundingBox;
+    if (!paper || !bounds) return 1;
+    const viewBounds = bounds.clone()
+      .applyMatrix4(paper.mesh.matrixWorld)
+      .applyMatrix4(camera.matrixWorldInverse);
+    const depth = viewBounds.min.z;
+    const projectedBounds = viewBounds.clone().applyMatrix4(camera.projectionMatrix);
+    const projectedSide = Math.max(
+      Math.abs(projectedBounds.max.x - projectedBounds.min.x),
+      Math.abs(projectedBounds.max.y - projectedBounds.min.y),
+      0.0001,
+    );
+    // Source FW(value, 1, .5), then sqrt(-depth / depthInfluence) / sizeMultiplier.
+    const blendedSide = THREE.MathUtils.lerp(projectedSide, 1, 0.5);
+    const depthFactor = Math.sqrt(Math.max(-depth, 0.0001) / 20) / 0.5;
+    return Math.max(blendedSide * depthFactor, 0.0001);
+  }
+
   mapPaperUvToSimulation(paperIndex: number, paperUv: THREE.Vector2): THREE.Vector2 {
     const box = this._paperSimulationBoxes.get(paperIndex) ?? new THREE.Vector4(0, 0, 1, 1);
     return new THREE.Vector2(

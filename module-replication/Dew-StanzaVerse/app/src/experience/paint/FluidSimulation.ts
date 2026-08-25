@@ -87,8 +87,9 @@ export class FluidSimulation {
         uPreviousPoint: { value: new THREE.Vector2() },
         uCurrentPoint: { value: new THREE.Vector2() },
         uVector: { value: new THREE.Vector2() },
-        uPreviousRadius: { value: new THREE.Vector2(0.04, 0.04) },
-        uCurrentRadius: { value: new THREE.Vector2(0.04, 0.04) },
+        uPreviousScale: { value: 0.04 },
+        uCurrentScale: { value: 0.04 },
+        uPaperRatio: { value: 1 },
         uIntensity: { value: 0.06 },
         uPressed: { value: 0 },
         uPaperIndex: { value: -1 },
@@ -370,8 +371,9 @@ export class FluidSimulation {
     this._splat.uniforms.uInputTexture.value = this._velocityA.texture;
     (this._splat.uniforms.uPreviousPoint.value as THREE.Vector2).copy(sample.previousUv);
     (this._splat.uniforms.uCurrentPoint.value as THREE.Vector2).copy(sample.currentUv);
-    (this._splat.uniforms.uPreviousRadius.value as THREE.Vector2).copy(sample.previousRadius);
-    (this._splat.uniforms.uCurrentRadius.value as THREE.Vector2).copy(sample.currentRadius);
+    this._splat.uniforms.uPreviousScale.value = sample.previousRadius.x;
+    this._splat.uniforms.uCurrentScale.value = sample.currentRadius.x;
+    this._splat.uniforms.uPaperRatio.value = sample.paperRatio;
     (this._splat.uniforms.uVector.value as THREE.Vector2).copy(state.force);
     this._splat.uniforms.uIntensity.value = sample.intensity;
     this._splat.uniforms.uPressed.value = sample.pressed ? 1 : 0;
@@ -406,7 +408,11 @@ export class FluidSimulation {
       sourceScale: diameter / 95,
       projectedSize: new THREE.Vector2(window.innerWidth, window.innerHeight),
       previousRadius: this._lastPaperRadii.get(paperIndex)?.clone() ?? radius.clone(),
-      currentRadius: radius,
+      currentRadius: new THREE.Vector2(
+        radius.x,
+        radius.x * (1 + (region.ratio - 1) * 0.5),
+      ),
+      sourceScreenSpaceSize: 1,
       visibleDiameter: diameter,
       simulationSize: new THREE.Vector2(region.width, region.height),
       paperRatio: region.ratio,

@@ -53,8 +53,9 @@ uniform sampler2D uInputTexture;
 uniform vec2 uPreviousPoint;
 uniform vec2 uCurrentPoint;
 uniform vec2 uVector;
-uniform vec2 uPreviousRadius;
-uniform vec2 uCurrentRadius;
+uniform float uPreviousScale;
+uniform float uCurrentScale;
+uniform float uPaperRatio;
 uniform float uIntensity;
 uniform float uPressed;
 uniform float uPaperIndex;
@@ -108,11 +109,14 @@ void main() {
         return;
     }
 
-    vec2 currentRadius = max(uCurrentRadius, vec2(0.00001));
-    float previousRadius = max(max(uPreviousRadius.x, uPreviousRadius.y), 0.00001);
-    float currentRadiusMax = max(currentRadius.x, currentRadius.y);
+    float currentScale = max(uCurrentScale, 0.00001);
+    float previousScale = max(uPreviousScale, 0.00001);
+    vec2 currentRadius = vec2(
+        currentScale,
+        currentScale * (1.0 + (uPaperRatio - 1.0) * 0.5)
+    );
     float sdf = sdEllipse(vLocalUv - uCurrentPoint, currentRadius);
-    sdf = max(0.0, -sdf / max(previousRadius, currentRadiusMax));
+    sdf = max(0.0, -sdf / max(previousScale, currentScale));
     float forceLength = length(uVector);
     vec2 radial = normalize((vLocalUv - uCurrentPoint) / currentRadius + vec2(0.00001)) * forceLength;
     vec2 injected = uPressed > 0.5
