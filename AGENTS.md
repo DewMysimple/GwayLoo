@@ -27,3 +27,9 @@ python wiki_memory/工具/memory_lint.py index
 - 网页任务继续读取和写入主线 `wiki_memory/`。
 - Blender 工作台任务读取主线必要的网页边界状态，并读取和写入 `blender_scenebench/wiki_memory/`；工作台与网页仍在同一个 `main` 工程中同步开发，不创建新的 Git 支线、仓库或子模块。
 - 同时涉及网页和 Blender 的混合任务，分别在两套记忆中记录对应范围；主线只保留网页事实和工作台边界说明，Blender 的场景、资源、构建、验证和创作细节放在工作台本地记忆。
+
+## Git 交付规则
+
+- 每次执行任务完成后只创建本地 Git commit，不执行 `git push`。
+- 默认继续使用当前分支，不自动创建新分支；Blender 与网页继续共用 `main` 工程。
+- 只有用户明确修改本规则时，才调整上述提交与推送边界。
