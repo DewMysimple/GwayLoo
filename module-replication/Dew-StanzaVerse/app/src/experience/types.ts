@@ -87,6 +87,7 @@ export interface SimulationRegion {
   height: number;
   atlasSize: number;
   remap: THREE.Vector4;
+  /** Source px[]: one simulation cell in this tile's atlas-normalized region. */
   texelSize: THREE.Vector2;
   ratio: number;
 }

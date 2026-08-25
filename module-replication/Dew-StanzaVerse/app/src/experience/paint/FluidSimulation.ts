@@ -64,7 +64,6 @@ export class FluidSimulation {
   private _lastPaperRadii = new Map<number, THREE.Vector2>();
   private _activeUntil = new Map<number, number>();
   private _markedActiveThisFrame = new Set<number>();
-  private _texelSize = new THREE.Vector2(1, 1);
   private _states = new Map<number, SimulationInstanceState>();
   private _fullPaintPaperIndex = -1;
   private _framesWithStencilEnabled = 0;
@@ -117,7 +116,7 @@ export class FluidSimulation {
     this._divergenceMat = new THREE.ShaderMaterial({
       vertexShader: simVertexShader,
       fragmentShader: simDivergenceFragment,
-      uniforms: { uVelocity: { value: null }, uTexelSize: { value: this._texelSize } },
+      uniforms: { uVelocity: { value: null } },
       depthTest: false,
       depthWrite: false,
     });
@@ -127,7 +126,6 @@ export class FluidSimulation {
       uniforms: {
         uPressure: { value: null },
         uDivergence: { value: null },
-        uTexelSize: { value: this._texelSize },
       },
       depthTest: false,
       depthWrite: false,
@@ -138,7 +136,6 @@ export class FluidSimulation {
       uniforms: {
         uPressure: { value: null },
         uVelocity: { value: null },
-        uTexelSize: { value: this._texelSize },
       },
       depthTest: false,
       depthWrite: false,
@@ -217,7 +214,6 @@ export class FluidSimulation {
     if (!packed) throw new Error("Unable to pack watercolor simulation regions");
 
     this._atlasSize = packed.size;
-    this._texelSize.set(1 / packed.size, 1 / packed.size);
     this._regions.clear();
     this._states.clear();
     this._activeUntil.clear();
@@ -234,7 +230,10 @@ export class FluidSimulation {
         ...tile,
         atlasSize: packed!.size,
         remap,
-        texelSize: this._texelSize.clone(),
+        // Source px[] is the current tile's own cell size in atlas UV space,
+        // not the full atlas texel. Divergence/pressure/gradient receive this
+        // value through the instanced aCellScale attribute below.
+        texelSize: new THREE.Vector2(1 / tile.width, 1 / tile.height),
         ratio: tile.width / tile.height,
       });
       this._states.set(tile.paperIndex, {
@@ -639,6 +638,7 @@ export class FluidSimulation {
       new THREE.InstancedBufferAttribute(new Float32Array(regions.map((region) => region.paperIndex)), 1),
     );
     geometry.setAttribute("aFboSize", new THREE.InstancedBufferAttribute(new Float32Array(regions.flatMap((region) => [region.width, region.height])), 2));
+    geometry.setAttribute("aCellScale", new THREE.InstancedBufferAttribute(new Float32Array(regions.flatMap((region) => [1 / region.width, 1 / region.height])), 2));
     geometry.setAttribute("aDeceleration", new THREE.InstancedBufferAttribute(new Float32Array(regions.map(() => 0.98)), 1).setUsage(THREE.DynamicDrawUsage));
     geometry.setAttribute("aAttenuation", new THREE.InstancedBufferAttribute(new Float32Array(regions.map(() => 0.96)), 1).setUsage(THREE.DynamicDrawUsage));
     geometry.setAttribute("aDt", new THREE.InstancedBufferAttribute(new Float32Array(regions.map((region) => SOURCE_SIMULATION_DT * region.width / this._atlasSize)), 1).setUsage(THREE.DynamicDrawUsage));

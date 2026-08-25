@@ -10,6 +10,7 @@ export const simVertexShader = /* glsl */ `
 attribute vec4 aRegion;
 attribute float aPaperIndex;
 attribute vec2 aFboSize;
+attribute vec2 aCellScale;
 attribute float aDeceleration;
 attribute float aAttenuation;
 attribute float aDt;
@@ -20,6 +21,7 @@ varying vec2 vSimulationUv;
 varying vec4 vRegion;
 varying float vPaperIndex;
 varying vec2 vFboSize;
+varying vec2 vCellScale;
 varying float vDeceleration;
 varying float vAttenuation;
 varying float vDt;
@@ -30,6 +32,7 @@ void main() {
     vRegion = aRegion;
     vPaperIndex = aPaperIndex;
     vFboSize = aFboSize;
+    vCellScale = aCellScale;
     vDeceleration = aDeceleration;
     vAttenuation = aAttenuation;
     vDt = aDt;
@@ -212,22 +215,22 @@ precision highp float;
 varying vec2 vSimulationUv;
 varying float vDt;
 varying vec4 vRegion;
+varying vec2 vCellScale;
 
 uniform sampler2D uVelocity;
-uniform vec2 uTexelSize;
 
 vec2 clampToRegion(vec2 value) {
-    return clamp(value, vRegion.xy + uTexelSize, vRegion.xy + vRegion.zw - uTexelSize);
+    return clamp(value, vRegion.xy + vCellScale, vRegion.xy + vRegion.zw - vCellScale);
 }
 
 void main() {
     // Source divergence uses one cell step and normalizes by the per-instance
     // dt. Pressure therefore receives velocity-per-time, not a raw delta
     // whose magnitude changes with the authored simulation timestep.
-    float right = texture2D(uVelocity, clampToRegion(vSimulationUv + vec2(uTexelSize.x, 0.0))).r;
-    float left = texture2D(uVelocity, clampToRegion(vSimulationUv - vec2(uTexelSize.x, 0.0))).r;
-    float top = texture2D(uVelocity, clampToRegion(vSimulationUv + vec2(0.0, uTexelSize.y))).g;
-    float bottom = texture2D(uVelocity, clampToRegion(vSimulationUv - vec2(0.0, uTexelSize.y))).g;
+    float right = texture2D(uVelocity, clampToRegion(vSimulationUv + vec2(vCellScale.x, 0.0))).r;
+    float left = texture2D(uVelocity, clampToRegion(vSimulationUv - vec2(vCellScale.x, 0.0))).r;
+    float top = texture2D(uVelocity, clampToRegion(vSimulationUv + vec2(0.0, vCellScale.y))).g;
+    float bottom = texture2D(uVelocity, clampToRegion(vSimulationUv - vec2(0.0, vCellScale.y))).g;
     float divergence = (right - left + top - bottom) * 0.5 / max(vDt, 0.000001);
     gl_FragColor = vec4(divergence, 0.0, 0.0, 1.0);
 }
@@ -261,20 +264,20 @@ precision highp float;
 
 varying vec2 vSimulationUv;
 varying vec4 vRegion;
+varying vec2 vCellScale;
 
 uniform sampler2D uPressure;
 uniform sampler2D uDivergence;
-uniform vec2 uTexelSize;
 
 vec2 clampToRegion(vec2 value) {
-    return clamp(value, vRegion.xy + uTexelSize, vRegion.xy + vRegion.zw - uTexelSize);
+    return clamp(value, vRegion.xy + vCellScale, vRegion.xy + vRegion.zw - vCellScale);
 }
 
 void main() {
-    float right = texture2D(uPressure, clampToRegion(vSimulationUv + vec2(uTexelSize.x * 2.0, 0.0))).r;
-    float left = texture2D(uPressure, clampToRegion(vSimulationUv - vec2(uTexelSize.x * 2.0, 0.0))).r;
-    float top = texture2D(uPressure, clampToRegion(vSimulationUv + vec2(0.0, uTexelSize.y * 2.0))).r;
-    float bottom = texture2D(uPressure, clampToRegion(vSimulationUv - vec2(0.0, uTexelSize.y * 2.0))).r;
+    float right = texture2D(uPressure, clampToRegion(vSimulationUv + vec2(vCellScale.x * 2.0, 0.0))).r;
+    float left = texture2D(uPressure, clampToRegion(vSimulationUv - vec2(vCellScale.x * 2.0, 0.0))).r;
+    float top = texture2D(uPressure, clampToRegion(vSimulationUv + vec2(0.0, vCellScale.y * 2.0))).r;
+    float bottom = texture2D(uPressure, clampToRegion(vSimulationUv - vec2(0.0, vCellScale.y * 2.0))).r;
     float divergence = texture2D(uDivergence, vSimulationUv).r;
     gl_FragColor = vec4((right + left + top + bottom) * 0.25 - divergence, 0.0, 0.0, 1.0);
 }
@@ -286,20 +289,20 @@ precision highp float;
 varying vec2 vSimulationUv;
 varying vec4 vRegion;
 varying float vDt;
+varying vec2 vCellScale;
 
 uniform sampler2D uPressure;
 uniform sampler2D uVelocity;
-uniform vec2 uTexelSize;
 
 vec2 clampToRegion(vec2 value) {
-    return clamp(value, vRegion.xy + uTexelSize, vRegion.xy + vRegion.zw - uTexelSize);
+    return clamp(value, vRegion.xy + vCellScale, vRegion.xy + vRegion.zw - vCellScale);
 }
 
 void main() {
-    float right = texture2D(uPressure, clampToRegion(vSimulationUv + vec2(uTexelSize.x, 0.0))).r;
-    float left = texture2D(uPressure, clampToRegion(vSimulationUv - vec2(uTexelSize.x, 0.0))).r;
-    float top = texture2D(uPressure, clampToRegion(vSimulationUv + vec2(0.0, uTexelSize.y))).r;
-    float bottom = texture2D(uPressure, clampToRegion(vSimulationUv - vec2(0.0, uTexelSize.y))).r;
+    float right = texture2D(uPressure, clampToRegion(vSimulationUv + vec2(vCellScale.x, 0.0))).r;
+    float left = texture2D(uPressure, clampToRegion(vSimulationUv - vec2(vCellScale.x, 0.0))).r;
+    float top = texture2D(uPressure, clampToRegion(vSimulationUv + vec2(0.0, vCellScale.y))).r;
+    float bottom = texture2D(uPressure, clampToRegion(vSimulationUv - vec2(0.0, vCellScale.y))).r;
     vec4 data = texture2D(uVelocity, vSimulationUv);
     vec2 velocity = data.rg - vec2(right - left, top - bottom) * 0.5 * vDt;
     gl_FragColor = vec4(velocity, data.b, 1.0);
