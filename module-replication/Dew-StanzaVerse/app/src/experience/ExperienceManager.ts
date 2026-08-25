@@ -149,7 +149,7 @@ export class ExperienceManager {
 
     this._simulation = new FluidSimulation(renderer, this._definition);
     this._watercolorView.init(this._simulation);
-    this._uiView = new UIView(this._textCanvas);
+    this._uiView = new UIView(this._textCanvas, this._definition.assets.device);
     this._uiView.init();
     this._poemView = new PoemView(this._textCanvas, this._simulation);
     this._fullPaintManager = new FullPaintManager(this._simulation, this._definition);
@@ -177,7 +177,7 @@ export class ExperienceManager {
         this._uiView?.setCursor(x, y);
         this._watercolorView.setPointer(x, y);
       },
-    });
+    }, this._definition.assets.device);
 
     bus.on(EVENTS.SHOW_OFFERS, () => this._handleShowOffers());
     bus.on(EVENTS.HIDE_OFFERS, () => this._handleHideOffers());

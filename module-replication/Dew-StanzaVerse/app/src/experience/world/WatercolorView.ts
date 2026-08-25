@@ -78,9 +78,9 @@ interface GroundEntry {
 
 export class WatercolorView {
   scene = new THREE.Scene();
-  scrollCamera = new ScrollCamera();
+  scrollCamera!: ScrollCamera;
   paintingTitles: PaintingTitles;
-  grassLayer = new GrassLayer();
+  grassLayer!: GrassLayer;
   shadowProjection = new ShadowProjection();
   cutoutShadow = new CutoutShadowLayer();
   globalGround = new GlobalGroundLayer();
@@ -139,6 +139,9 @@ export class WatercolorView {
 
   init(simulation: FluidSimulation): void {
     this._simulation = simulation;
+    const device = this._definition.assets.device;
+    this.scrollCamera = new ScrollCamera(device);
+    this.grassLayer = new GrassLayer(device);
     const gltf = resources.get<GLTF>("watercolor/scene");
     if (!gltf) {
       console.error("[WatercolorView] scene.glb 未加载");
@@ -154,7 +157,11 @@ export class WatercolorView {
     this.scene.add(this.grassLayer.group);
     // Source F3 owns one global particle renderer (1024 instances + 32×32
     // position pass), rather than one simplified Points cloud per paper.
-    this._leavesLayer = new LeavesLayer(this.scene, this._definition.world.paperLayers.vegetation);
+    this._leavesLayer = new LeavesLayer(
+      this.scene,
+      this._definition.world.paperLayers.vegetation,
+      this._definition.assets.device,
+    );
 
     // 共享纹理
     const atlasTexture = resources.get<THREE.Texture>("atlas/texture");

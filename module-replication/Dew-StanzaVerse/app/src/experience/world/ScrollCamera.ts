@@ -9,6 +9,7 @@
  */
 import * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
+import type { DeviceKind } from "../definition";
 
 export class ScrollCamera {
   camera!: THREE.PerspectiveCamera; // 在 init() 中创建
@@ -23,10 +24,15 @@ export class ScrollCamera {
   private _pointerEuler = new THREE.Euler();
   private _pointerQuaternion = new THREE.Quaternion();
   private _reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  private _device: DeviceKind;
   private readonly _entryDuration = 5;
   private readonly _pointerForceX = 2.55;
   private readonly _pointerForceY = 9.2;
   private readonly _pointerDamping = 0.3;
+
+  constructor(device: DeviceKind = "desktop") {
+    this._device = device;
+  }
 
   /** 从 GLTF 场景初始化（gltf.scene 会被整体放进水彩场景） */
   init(gltf: GLTF): void {
@@ -71,9 +77,7 @@ export class ScrollCamera {
   }
 
   private _touchParallaxDisabled(): boolean {
-    return "ontouchstart" in window
-      || navigator.maxTouchPoints > 0
-      || window.innerWidth < 768
+    return this._device === "mobile"
       || window.matchMedia("(pointer: coarse)").matches;
   }
 

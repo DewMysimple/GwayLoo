@@ -7,13 +7,16 @@
  * - 点击文字 → 诗歌视图；点击画作主纸 → 全幅绘画
  */
 import * as THREE from "three";
-import { IS_MOBILE } from "../../config/assets";
 import type { FluidSimulation } from "./FluidSimulation";
 import type { FullPaintManager } from "./FullPaintManager";
 import type { WatercolorView } from "../world/WatercolorView";
+import type { DeviceKind } from "../definition";
 import type { BrushSample, RaycastHit } from "../types";
 
-export const LONG_PRESS_TIME = IS_MOBILE ? 0.6 : 0.3;
+export const LONG_PRESS_TIME = 0.3;
+export function getLongPressTime(device: DeviceKind): number {
+  return device === "mobile" ? 0.6 : LONG_PRESS_TIME;
+}
 
 const SOURCE_CURSOR_DIAMETER = 95;
 const SOURCE_SPEED_MAX = 0.08;
@@ -35,6 +38,7 @@ export class PaintManager {
   private _fullPaint: FullPaintManager;
   private _view: WatercolorView;
   private _callbacks: PaintCallbacks;
+  private _longPressTime: number;
 
   private _raycaster = new THREE.Raycaster();
   private _pointerTarget = new THREE.Vector2(-10, -10);
@@ -69,11 +73,13 @@ export class PaintManager {
     fullPaint: FullPaintManager,
     view: WatercolorView,
     callbacks: PaintCallbacks,
+    device: DeviceKind = "desktop",
   ) {
     this._simulation = simulation;
     this._fullPaint = fullPaint;
     this._view = view;
     this._callbacks = callbacks;
+    this._longPressTime = getLongPressTime(device);
     this._bind();
   }
 
@@ -131,7 +137,7 @@ export class PaintManager {
     this._pressTimer = window.setTimeout(() => {
       this._fullPaint.show(hit.sceneIndex);
       this._pressTimer = null;
-    }, LONG_PRESS_TIME * 1000);
+    }, this._longPressTime * 1000);
   }
 
   private _onUp(e: PointerEvent): void {
@@ -257,9 +263,15 @@ export class PaintManager {
 
     this.sceneIndex = hit.sceneIndex;
     const mobileCanPaint = this._pointerType === "mouse" || this._pointerDown;
+    // Keep the smoothing tail for the current brush sample, but do not let a
+    // stationary pointer keep refreshing FluidSimulation's five-second
+    // activity grace window. A real input event (or an active press) must be
+    // recent before a hover frame can inject another splat.
+    const recentPointerInput = performance.now() - this._lastInputAt < 120;
     const paintingMovement = !this._reducedMotion
       && mobileCanPaint
-      && move.lengthSq() > 0.002;
+      && move.lengthSq() > 0.002
+      && (recentPointerInput || this._pointerDown);
     // A raycast hit keeps the cursor in its paint state, but must not keep the
     // fluid GPU pass alive forever when the pointer is merely resting on a
     // paper. Refresh the source-style grace window only for real brush motion

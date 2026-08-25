@@ -11,7 +11,7 @@
  */
 import * as THREE from "three";
 import { resources } from "../../core/Resources";
-import { experienceDefinition, type ExperienceDefinition } from "../definition";
+import { experienceDefinition, type DeviceKind, type ExperienceDefinition } from "../definition";
 
 const TILE_PADDING = 24;
 
@@ -80,9 +80,15 @@ export interface TextCanvasBox {
 export class TextCanvas {
   texture: THREE.CanvasTexture | null = null;
   private _fontFamily: string;
+  private _definition: ExperienceDefinition;
 
   constructor(definition: ExperienceDefinition = experienceDefinition) {
+    this._definition = definition;
     this._fontFamily = definition.fonts.canelaThin.family;
+  }
+
+  private get _device(): DeviceKind {
+    return this._definition.assets.device;
   }
 
   /** 原始 AK 的 Poem 纹理与固定 hK 布局；主滚动页仍使用上面的 DOM 纹理。 */
@@ -132,7 +138,7 @@ export class TextCanvas {
 
   /** 等字体就绪后绘制 */
   async prepare(): Promise<void> {
-    const fontSize = window.innerWidth < 768 ? 25 : 30;
+    const fontSize = this._device === "mobile" ? 25 : 30;
     await document.fonts.load(`100 ${fontSize}px "${this._fontFamily}"`);
     await document.fonts.ready;
     this._render();
@@ -190,7 +196,7 @@ export class TextCanvas {
     if (!sections.length) return;
 
     const dpr = this._dpr;
-    this._mobile = window.innerWidth < 768;
+    this._mobile = this._device === "mobile";
     const fontSize = this._mobile ? 25 : 30;
     const lineHeight = this._mobile ? 40 : 48;
     // 测量
@@ -299,7 +305,7 @@ export class TextCanvas {
   }
 
   resize(): void {
-    const mobile = window.innerWidth < 768;
+    const mobile = this._device === "mobile";
     if (mobile === this._mobile) return;
     this.texture?.dispose();
     this._render();

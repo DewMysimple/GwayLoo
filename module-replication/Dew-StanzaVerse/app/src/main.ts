@@ -84,7 +84,7 @@ function initializeRuntime(activeRenderer: THREE.WebGLRenderer): boolean {
     // 任一项失败都必须进入可读 fallback，而不是让顶层模块异常中断。
     resources.setupKtx2(activeRenderer, experienceDefinition.world.assets.basisTranscoderPath);
     loaderExperience.init();
-    cursor.init();
+    cursor.init(experienceDefinition.assets.device);
     debugController.init(() => experienceManager.state);
     audioManager.init();
     scrollController.init();

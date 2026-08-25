@@ -9,6 +9,7 @@
 import * as THREE from "three";
 import gsap from "gsap";
 import { resources } from "../../core/Resources";
+import type { DeviceKind } from "../definition";
 import { textVertexShader, textFragmentShader } from "../../shaders/text";
 import type { TextCanvas } from "../world/TextCanvas";
 
@@ -29,11 +30,13 @@ export class UIView {
   private _quad: THREE.Mesh | null = null;
   private _material: THREE.ShaderMaterial | null = null;
   private _textCanvas: TextCanvas;
+  private _device: DeviceKind;
   private _visible = false;
   private _rect = { x: 0, y: 0, w: 0, h: 0 };
 
-  constructor(textCanvas: TextCanvas) {
+  constructor(textCanvas: TextCanvas, device: DeviceKind = "desktop") {
     this._textCanvas = textCanvas;
+    this._device = device;
     // 像素坐标、原点左上角（与 CSS 坐标一致：y 向下）
     this.camera = new THREE.OrthographicCamera(
       0,
@@ -49,7 +52,7 @@ export class UIView {
     const noise = resources.get<THREE.Texture>("noise/rgb-fractal");
     noise.wrapS = noise.wrapT = THREE.RepeatWrapping;
 
-    const rect = getTextRect(window.innerWidth < 768);
+    const rect = getTextRect(this._device === "mobile");
     this._rect = rect;
 
     this._material = new THREE.ShaderMaterial({
@@ -150,7 +153,7 @@ export class UIView {
     this.camera.top = height; // top=height / bottom=0
     this.camera.bottom = 0;
     this.camera.updateProjectionMatrix();
-    this._rect = getTextRect(width < 768);
+    this._rect = getTextRect(this._device === "mobile");
     if (this._material) this._material.uniforms.map.value = this._textCanvas.texture;
     this._layout();
   }

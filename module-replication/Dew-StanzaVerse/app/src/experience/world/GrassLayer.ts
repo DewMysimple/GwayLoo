@@ -1,7 +1,7 @@
 import * as THREE from "three";
-import { IS_MOBILE } from "../../config/assets";
 import { resources } from "../../core/Resources";
 import { grassFragmentShader, grassVertexShader } from "../../shaders/grass";
+import type { DeviceKind } from "../definition";
 import type { GrassInstanceConfig } from "../types";
 
 interface GrassPatch {
@@ -46,14 +46,16 @@ export class GrassLayer {
   readonly configs: GrassInstanceConfig[] = [];
   private _patches: GrassPatch[] = [];
   private _material: THREE.ShaderMaterial | null = null;
+  private _device: DeviceKind;
 
-  constructor() {
+  constructor(device: DeviceKind = "desktop") {
+    this._device = device;
     this.group.name = "SourceGrassLayer";
-    this.group.visible = !IS_MOBILE;
+    this.group.visible = device !== "mobile";
   }
 
   init(): void {
-    if (IS_MOBILE) return;
+    if (this._device === "mobile") return;
     const noise = resources.get<THREE.Texture>("grass/noise");
     noise.wrapS = noise.wrapT = THREE.RepeatWrapping;
     const blades = resources.get<THREE.Texture>("grass/blade-atlas");
@@ -86,7 +88,7 @@ export class GrassLayer {
   }
 
   addGround(paperIndex: number, groundPosition: THREE.Vector3, groundRotationZ: number, size: THREE.Vector2): void {
-    if (IS_MOBILE || !this._material) return;
+    if (this._device === "mobile" || !this._material) return;
     const instances = this._createPoints(size);
     if (!instances.length) return;
 
@@ -163,7 +165,7 @@ export class GrassLayer {
   }
 
   update(time: number, delta: number, fogState: { opaque: number; occulted: number }): void {
-    if (IS_MOBILE || !this._material) return;
+    if (this._device === "mobile" || !this._material) return;
     this._material.uniforms.uTime.value = time;
     (this._material.uniforms.uFogState.value as THREE.Vector2).set(fogState.opaque, fogState.occulted);
     const now = performance.now();

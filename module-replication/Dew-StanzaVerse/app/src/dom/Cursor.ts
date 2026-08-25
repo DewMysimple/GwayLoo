@@ -8,7 +8,7 @@
  */
 import gsap from "gsap";
 import { bus, EVENTS } from "../core/EventBus";
-import { IS_MOBILE } from "../config/assets";
+import type { DeviceKind } from "../experience/definition";
 
 type CursorState = "default" | "text" | "paint";
 
@@ -18,8 +18,8 @@ export class Cursor {
   private _yTo: ((v: number) => void) | null = null;
   private _shown = false;
 
-  init(): void {
-    if (IS_MOBILE) return;
+  init(device: DeviceKind = "desktop"): void {
+    if (device === "mobile") return;
     this._el = document.getElementById("cursor");
     if (!this._el) return;
 

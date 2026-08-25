@@ -76,7 +76,6 @@ export interface ExperienceDefinition {
 
 const assetRoot = "/assets/xp";
 const sceneIds: readonly SceneId[] = [1, 2, 3, 4, 5, 6];
-const device = detectWorldDevice();
 const sceneTitles = [
   "Dales with Cows",
   "Nidderdale Farm",
@@ -114,8 +113,12 @@ export const experienceDefinition: ExperienceDefinition = {
   tail: tailCopy,
   assets: {
     staticResources,
-    videoResources: createVideoResources(device),
-    device,
+    get videoResources(): readonly ResourceItem[] {
+      return createVideoResources(detectWorldDevice());
+    },
+    get device(): DeviceKind {
+      return detectWorldDevice();
+    },
   },
   scenes: sceneIds.map(createScene),
   sounds: [

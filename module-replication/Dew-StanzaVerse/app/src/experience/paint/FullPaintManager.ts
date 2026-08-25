@@ -112,10 +112,7 @@ export class FullPaintManager {
     const key = `${layer}/${sceneIndex}`;
     let video = this._videoCache.get(key);
     if (!video) {
-      const platform =
-        "ontouchstart" in window || navigator.maxTouchPoints > 0 || window.innerWidth < 768
-          ? "mobile"
-          : "desktop";
+      const platform = this._definition.assets.device;
       video = document.createElement("video");
       video.muted = true;
       video.loop = true;

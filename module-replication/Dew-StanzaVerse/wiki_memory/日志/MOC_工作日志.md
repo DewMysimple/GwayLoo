@@ -19,6 +19,7 @@ supersedes: null
 | 2026-08-25 | feature | - | archived | global-ground-background-shadow-reconstruction | [[日志/2026-08-25-全局Ground背景与阴影职责重建及交付QA.md|全局 Ground、Background 与阴影职责重建及交付 QA]] |
 | 2026-08-25 | test | - | archived | five-viewport-delivery-regression-and-cursor-gate | [[日志/2026-08-25-五视口交付回归与光标状态门禁修正.md|五视口交付回归与光标状态门禁修正]] |
 | 2026-08-25 | feature | - | archived | main-runtime-reducer-boundary-and-five-viewport-qa | [[日志/2026-08-25-主工程运行时Reducer边界迁移与五视口QA.md|主工程运行时 Reducer 边界迁移与五视口 QA]] |
+| 2026-08-25 | feature | 继续把主工程的设备能力/移动端降级边界解构到 Branch 的 `ExperienceDefinition`，并修正停笔后的流体 activity 不应被平滑尾帧无限续期的问题。 | archived | device-definition-mobile-degradation-and-idle-brush-qa | [[日志/2026-08-25-主工程设备能力与移动端降级Definition边界及空闲笔刷QA.md|2026-08-25｜主工程设备能力与移动端降级 Definition 边界及空闲笔刷 QA]] |
 | 2026-08-25 | feature | - | archived | main-content-definition-dom-adapter-and-five-viewport-qa | [[日志/2026-08-25-主工程内容Definition与DOM适配.md|主工程内容 Definition 与 DOM 适配]] |
 | 2026-08-25 | feature | - | archived | main-world-assets-definition-migration-and-five-viewport-qa | [[日志/2026-08-25-主工程World资源定义迁移与QA.md|主工程 World 资源定义迁移与五视口 QA]] |
 | 2026-08-25 | feature | - | archived | main-scene-metadata-definition-and-five-viewport-qa | [[日志/2026-08-25-主工程SceneMetadata迁移与QA.md|主工程 Scene Metadata 迁移与五视口 QA]] |

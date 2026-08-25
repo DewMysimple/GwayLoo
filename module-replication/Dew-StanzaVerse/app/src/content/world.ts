@@ -58,7 +58,10 @@ export const staticResources: readonly ResourceItem[] = [
 ];
 
 export function detectWorldDevice(): WorldDevice {
-  return "ontouchstart" in window || navigator.maxTouchPoints > 0 || window.innerWidth < 768
+  return "ontouchstart" in window
+    || navigator.maxTouchPoints > 0
+    || window.innerWidth < 768
+    || window.matchMedia("(max-width: 767px)").matches
     ? "mobile"
     : "desktop";
 }

@@ -7,8 +7,8 @@
  */
 import * as THREE from "three";
 import { resources } from "../../core/Resources";
-import { IS_MOBILE } from "../../config/assets";
 import type { PaperVegetationContract } from "../../content/paper-layers";
+import type { DeviceKind } from "../definition";
 import type { RaycastHit } from "../types";
 import {
   leavesFragmentShader,
@@ -30,7 +30,7 @@ interface LeavesIntersection {
 export class LeavesLayer {
   readonly count = PARTICLE_COUNT;
   readonly passSize = PASS_SIZE;
-  readonly enabled = !IS_MOBILE;
+  readonly enabled: boolean;
 
   private _scene: THREE.Scene;
   private _papers: readonly PaperVegetationContract[];
@@ -50,9 +50,10 @@ export class LeavesLayer {
   private _time = 0;
   private _colors = new Map<number, THREE.Color>();
 
-  constructor(scene: THREE.Scene, papers: readonly PaperVegetationContract[]) {
+  constructor(scene: THREE.Scene, papers: readonly PaperVegetationContract[], device: DeviceKind = "desktop") {
     this._scene = scene;
     this._papers = papers;
+    this.enabled = device !== "mobile";
     if (!this.enabled) return;
     this._createPositionPass();
     this._createParticles();
