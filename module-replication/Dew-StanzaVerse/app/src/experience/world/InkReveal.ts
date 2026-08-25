@@ -5,6 +5,7 @@ export interface DebugOptions {
   enabled: boolean;
   seed: number | null;
   freezeTime: number | null;
+  noIntro: boolean;
 }
 
 export function getDebugOptions(): DebugOptions {
@@ -15,6 +16,7 @@ export function getDebugOptions(): DebugOptions {
     enabled: import.meta.env.DEV && params.get("debug") === "1",
     seed: seed == null ? null : Number(seed),
     freezeTime: freeze == null ? null : Number(freeze),
+    noIntro: params.has("noIntro"),
   };
 }
 

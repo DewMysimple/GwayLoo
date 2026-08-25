@@ -58,6 +58,9 @@ interface PaperEntry {
   /** Hidden GLB authoring mesh retained only for raycasting and transforms. */
   mesh: THREE.Mesh;
   transform: THREE.Object3D;
+  /** Source TZ group start plus papersContainer.show(name, groupIndex) delay. */
+  revealStartAt: number;
+  revealDelay: number;
   state: { alpha: number; curve: number; reveal: number; rotationZ: number };
   revealed: boolean;
   tween: gsap.core.Timeline | null;
@@ -219,6 +222,21 @@ export class WatercolorView {
 
     // GLB meshes remain hidden authoring proxies. The visible papers are built
     // below from the source's single subdivided plane and instance matrices.
+    const revealGroupIndices = new Map<number, number>();
+    const revealSchedule = new Map<string, { startAt: number; delay: number }>();
+    const noIntro = getDebugOptions().noIntro;
+    this._papers.forEach((identity, index) => {
+      const startAt = this._definition.world.atlas.layerSchedule[identity.name] ?? identity.startAt;
+      const groupIndex = revealGroupIndices.get(startAt) ?? 0;
+      revealGroupIndices.set(startAt, groupIndex + 1);
+      // Source papersContainer.show(): the first paper has a 1.5s intro
+      // pause (unless ?noIntro is present), and papers in the same TZ group
+      // are staggered by 0.3s in their manifest order.
+      revealSchedule.set(identity.name, {
+        startAt,
+        delay: (index === 0 && !noIntro ? 1.5 : 0) + groupIndex * 0.3,
+      });
+    });
     this._papers.forEach((identity, index) => {
       const mesh = gltf.scene.getObjectByName(identity.name) as THREE.Mesh | undefined;
       if (!mesh || !(mesh as THREE.Mesh).isMesh) {
@@ -231,6 +249,7 @@ export class WatercolorView {
       const sdf = this._definition.world.paperLayers.sdf[index];
       const shadow = this._definition.world.paperLayers.shadow[index];
       if (!sdfData || !texData || !ground || !sdf || !shadow) return;
+      const schedule = revealSchedule.get(identity.name) ?? { startAt: identity.startAt, delay: 0 };
 
       const reveal = createRevealConfig(sdfData.planeSize.y / sdfData.planeSize.x, identity.name);
       mesh.visible = false;
@@ -262,7 +281,20 @@ export class WatercolorView {
       this._paperSimulationBoxes.set(index, boxes.paperBox.clone());
       this._groundSimulationBoxes.set(index, boxes.groundBox.clone());
       const state = { alpha: 0, curve: 1, reveal: 0, rotationZ: -Math.PI / 2 };
-      this.papers.push({ index, identity, mesh, transform, state, revealed: false, tween: null, ground, sdf, shadow });
+      this.papers.push({
+        index,
+        identity,
+        mesh,
+        transform,
+        revealStartAt: schedule.startAt,
+        revealDelay: schedule.delay,
+        state,
+        revealed: false,
+        tween: null,
+        ground,
+        sdf,
+        shadow,
+      });
       prepared.push({ index, mesh, sdfData, texData, reveal, matrix: transform.matrix.clone(), simulationBox, simulationRemap, ground, sdf, shadow });
       this.instanceConfigs.push({
         index,
@@ -418,8 +450,10 @@ export class WatercolorView {
         (uniforms.uCurveCoef.value as number[])[paper.index] = paper.state.curve;
         (uniforms.uRevealProgress.value as number[])[paper.index] = paper.state.reveal;
       }
-      const scheduledStart = this._definition.world.atlas.layerSchedule[paper.sdf.name] ?? paper.sdf.startAt;
-      if (!paper.revealed && triggerTime >= scheduledStart) {
+      // Source triggers the whole paper group at TZ.startAt; the stagger is a
+      // delay on the shared Paper/Cutout/Shadow/Ground animation timeline,
+      // not an additional scroll-camera threshold.
+      if (!paper.revealed && triggerTime >= paper.revealStartAt) {
         this._reveal(paper);
       }
       paper.transform.rotation.z = -paper.state.rotationZ;
@@ -639,10 +673,32 @@ export class WatercolorView {
     return { ...this._revealTiming };
   }
 
+  /** Exposes source TZ-group scheduling to deterministic browser QA. */
+  getRevealSchedule() {
+    return this.papers.map((paper) => ({
+      paperIndex: paper.index,
+      name: paper.identity.name,
+      startAt: paper.revealStartAt,
+      delay: paper.revealDelay,
+      triggerAt: paper.revealStartAt,
+      animationStartAt: paper.revealStartAt + paper.revealDelay,
+    }));
+  }
+
   private _reveal(paper: PaperEntry): void {
     paper.revealed = true;
-    if (paper.shadow.hasHole) this.cutoutShadow.show(paper.index);
-    const tl = gsap.timeline();
+    // papersContainer.show() adds the same delay to the Paper, CutoutShadow,
+    // Shadow and Ground child timelines. Keeping it on this parent timeline
+    // preserves source ordering while making the layers start together.
+    const tl = gsap.timeline({ delay: paper.revealDelay });
+    tl.call(() => {
+      if (paper.shadow.hasHole) this.cutoutShadow.show(paper.index);
+      const ground = this._grounds.find((entry) => entry.paperName === paper.identity.name);
+      if (ground && this._groundMaterial) {
+        this._groundVisible[paper.index] = true;
+        (this._groundMaterial.uniforms.uVisible.value as boolean[])[paper.index] = true;
+      }
+    }, [], 0);
     if (paper.sdf.revealType === "fade") {
       // Source fade layers (background_2) stay flat and reveal through a
       // three-second opacity ramp; they do not use the ordinary paper's
@@ -677,8 +733,6 @@ export class WatercolorView {
     );
     const ground = this._grounds.find((entry) => entry.paperName === paper.identity.name);
     if (ground && this._groundMaterial) {
-      this._groundVisible[paper.index] = true;
-      (this._groundMaterial.uniforms.uVisible.value as boolean[])[paper.index] = true;
       tl.fromTo(
         this._groundStates[paper.index],
         { uAlpha: 0 },
