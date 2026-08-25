@@ -211,8 +211,11 @@ varying vec2 vSimulationUv;
 // The extracted simulation can carry a full-tile velocity field, but the
 // delivery paper only reveals a restrained wet response. Without this display
 // gain, a single pointer stroke drives the 0.05..0.15 UV offset threshold over
-// the whole sheet and presents as an endless high-frequency shimmer.
-const float DELIVERY_SIMULATION_VISUAL_GAIN = 0.04;
+// the whole sheet and presents as an endless high-frequency shimmer. Keep the
+// delivery gain below the source's raw field response: the source shader is
+// authoritative for the fluid, while this display layer must remain a quiet
+// wet-paper response on ordinary pointer strokes.
+const float DELIVERY_SIMULATION_VISUAL_GAIN = 0.015;
 
 // Fog
 uniform vec2 uFogState;
