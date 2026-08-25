@@ -10,9 +10,9 @@ export default tseslint.config(
       'dist',
       'node_modules',
       'public/wp-content',
-      'scene_workbench/source_snapshot',
-      'scene_workbench/generated',
-      'scene_workbench/blender'
+      'blender_scenebench/source_snapshot',
+      'blender_scenebench/generated',
+      'blender_scenebench/blender'
     ]
   },
   js.configs.recommended,

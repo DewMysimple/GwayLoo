@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import json
 import math
 import os
@@ -10,7 +11,7 @@ import bpy
 
 
 WORKBENCH = Path(__file__).resolve().parents[1]
-REPORT = WORKBENCH / "reports/blender-validation.json"
+DEFAULT_REPORT = WORKBENCH / "reports/blender-validation.json"
 MANIFEST = WORKBENCH / "manifests/scene_manifest.json"
 PUBLIC_ASSETS = WORKBENCH.parent / "public/wp-content/themes/davidwhyte/resources/assets/xp"
 REQUIRED_SHARED_COLLECTIONS = {
@@ -20,6 +21,18 @@ REQUIRED_SHARED_COLLECTIONS = {
     "CAMERA_RIG",
     "REFERENCE_ONLY",
 }
+
+
+def parse_script_args() -> argparse.Namespace:
+    raw_args = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
+    parser = argparse.ArgumentParser(description="Validate a loaded Blender SceneBench file.")
+    parser.add_argument(
+        "--report",
+        type=Path,
+        default=Path(os.environ.get("VERMINOBLE_BLEND_VALIDATION_REPORT", str(DEFAULT_REPORT))),
+        help="JSON report path.",
+    )
+    return parser.parse_args(raw_args)
 
 
 def action_fcurves(action: bpy.types.Action | None) -> list[bpy.types.FCurve]:
@@ -50,6 +63,8 @@ def authored_world_matrix(obj: bpy.types.Object):
 
 
 def main() -> None:
+    args = parse_script_args()
+    report = args.report.resolve()
     failures: list[str] = []
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     expected_texture_remaps = manifest["watercolor"]["texture_atlas_remaps"]
@@ -664,7 +679,8 @@ def main() -> None:
         "packed_fonts": len([font for font in bpy.data.fonts if font.packed_file is not None]),
         "portable_external_assets": not non_portable,
     }
-    REPORT.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    report.parent.mkdir(parents=True, exist_ok=True)
+    report.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(json.dumps(result, ensure_ascii=False))
     if failures:
         sys.stderr.flush()

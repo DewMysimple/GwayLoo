@@ -28,4 +28,4 @@
 - Grass source parameters were extracted from the runtime: Poisson-disc spacing 1.8–2.8 with seven tries, 7–24 clustered blades per seed, ten blade-atlas regions, eight gradient groups with three columns each, eight vertical segments, global scale 5, wind displacement 3000, intensity 3 and speed 0.5.
 - The Blender generator uses a fixed local seed for reproducibility while retaining the source algorithm and resources. Browser cursor reveal and an uncaptured `Math.random()` outcome cannot be mirrored exactly without recording a specific browser session.
 
-The read-only reference directory was inspected but not written. All extraction and Blender generation use files copied into `scene_workbench/source_snapshot/`.
+The read-only reference directory was inspected but not written. All extraction and Blender generation use files copied into `blender_scenebench/source_snapshot/`.

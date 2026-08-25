@@ -29,7 +29,12 @@ OUTPUT = Path(
         str(WORKBENCH / "blender/Verminoble_Scene_Mirror_5_0.blend"),
     )
 ).resolve()
-REPORT = WORKBENCH / "reports/blender-build.json"
+REPORT = Path(
+    os.environ.get(
+        "VERMINOBLE_BLEND_BUILD_REPORT",
+        str(WORKBENCH / "reports/blender-build.json"),
+    )
+).resolve()
 
 FPS = 60
 CAMERA_SAMPLE_COUNT = 3587

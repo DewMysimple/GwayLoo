@@ -8,6 +8,8 @@ This directory is an isolated local art workspace for studying and rebuilding th
 - `blender/Verminoble_Scene_Mirror_5_0.blend`: tracked Blender 5.0 master file. Its runtime media paths point to the tracked `public/.../xp` assets; the generated Ground PNG and converted annotation font are packed into the file so a normal repository checkout does not resolve through the ignored `source_snapshot/` or `generated/` directories. Automatic `.blend1/.blend2` backups remain ignored.
 - `manifests/asset_manifest.json`: size, SHA-256, format, purpose and media metadata.
 - `manifests/scene_manifest.json`: GLB structure, camera timing, watercolor UV/SDF rectangles, layer schedule and hotspots.
+- `manifests/version_registry.json`: the full baseline and planned derivative-version records.
+- `versions/`: version-layout rules; derivative files are created only by the explicit version-preparation tool.
 - `tools/`: reproducible extraction, conversion, Blender build, validation and render scripts.
 - `reports/`: source differences, Blender structure checks and rendering-boundary documentation.
 - `generated/`: ignored KTX/font conversions, tool cache and validation renders.
@@ -42,6 +44,18 @@ Editable watercolor topology is cleaned conservatively during generation: import
 
 The build and validation scripts never change or save Blender user preferences. Blender's built-in interface language therefore follows the user's existing installation settings. The generated project explicitly names its saved workspaces in Chinese so they match the Chinese startup UI; asset, object, material and script identifiers remain portable ASCII English. `--factory-startup` in the background commands isolates automated generation only and does not save factory preferences over the user's configuration.
 
+## Version preparation
+
+The current complete file remains the only source of truth. Future versions use independent files under `versions/<version-id>/blender/`, with their own reports and generated outputs. The planned future workbench root is `blender/_scenebench/`, but this directory is not created or migrated by the current preparation step.
+
+Preview a registered version without writing anything:
+
+```powershell
+python blender_scenebench/tools/prepare_blend_version.py --version-id no-animation --dry-run
+```
+
+Creating a derivative requires an explicit `--create`; the tool opens the source and saves a separate target while rebasing portable asset paths. It does not remove animation or apply any artistic transformation.
+
 Read [`reports/rendering-boundaries.md`](reports/rendering-boundaries.md) before changing materials. It distinguishes exact source data from renderer-specific approximations.
 
 ## Rebuild
@@ -49,22 +63,22 @@ Read [`reports/rendering-boundaries.md`](reports/rendering-boundaries.md) before
 Run from the project root:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scene_workbench/tools/prepare_support_assets.ps1
-python scene_workbench/tools/generate_manifests.py
-& 'F:\Blender\blender.exe' --background --factory-startup --python scene_workbench/tools/build_blender_scene.py
-& 'F:\Blender\blender.exe' --background --factory-startup scene_workbench/blender/Verminoble_Scene_Mirror_5_0.blend --python scene_workbench/tools/validate_blend.py
+powershell -ExecutionPolicy Bypass -File blender_scenebench/tools/prepare_support_assets.ps1
+python blender_scenebench/tools/generate_manifests.py
+& 'F:\Blender\blender.exe' --background --factory-startup --python blender_scenebench/tools/build_blender_scene.py
+& 'F:\Blender\blender.exe' --background --factory-startup blender_scenebench/blender/Verminoble_Scene_Mirror_5_0.blend --python blender_scenebench/tools/validate_blend.py
 ```
 
 If the master file was generated before the portable-asset change, repair its paths without rebuilding the scene:
 
 ```powershell
-& 'F:\Blender\blender.exe' --background --factory-startup --python scene_workbench/tools/repair_blend_assets.py
+& 'F:\Blender\blender.exe' --background --factory-startup --python blender_scenebench/tools/repair_blend_assets.py
 ```
 
 To regenerate 30 validation renders (seven source animation frames, one artist overview, five artist frames including the reported frame 690, one material preview, four face/oblique/grazing/back material-angle previews, one tree-and-grass preview, one background-card preview, four source-camera frames and six landscape frames):
 
 ```powershell
-& 'F:\Blender\blender.exe' --background --factory-startup scene_workbench/blender/Verminoble_Scene_Mirror_5_0.blend --python scene_workbench/tools/render_validation.py
+& 'F:\Blender\blender.exe' --background --factory-startup blender_scenebench/blender/Verminoble_Scene_Mirror_5_0.blend --python blender_scenebench/tools/render_validation.py
 ```
 
 ## Isolation and Git policy

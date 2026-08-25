@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import os
@@ -12,8 +13,26 @@ from mathutils import Matrix, Vector
 
 
 WORKBENCH = Path(__file__).resolve().parents[1]
-OUTPUT = WORKBENCH / "generated/renders"
-REPORT = WORKBENCH / "reports/render-validation.json"
+DEFAULT_OUTPUT = WORKBENCH / "generated/renders"
+DEFAULT_REPORT = WORKBENCH / "reports/render-validation.json"
+
+
+def parse_script_args() -> argparse.Namespace:
+    raw_args = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
+    parser = argparse.ArgumentParser(description="Render Blender SceneBench validation previews.")
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path(os.environ.get("VERMINOBLE_RENDER_OUTPUT", str(DEFAULT_OUTPUT))),
+        help="Render output directory.",
+    )
+    parser.add_argument(
+        "--report",
+        type=Path,
+        default=Path(os.environ.get("VERMINOBLE_RENDER_REPORT", str(DEFAULT_REPORT))),
+        help="JSON report path.",
+    )
+    return parser.parse_args(raw_args)
 
 
 def set_world_color(world: bpy.types.World, color: tuple[float, float, float]) -> None:
@@ -81,7 +100,14 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest().upper()
 
 
-def render(scene: bpy.types.Scene, frame: int, width: int, height: int, filename: str) -> dict[str, object]:
+def render(
+    scene: bpy.types.Scene,
+    frame: int,
+    width: int,
+    height: int,
+    filename: str,
+    output: Path,
+) -> dict[str, object]:
     bpy.context.window.scene = scene
     scene.render.resolution_x = width
     scene.render.resolution_y = height
@@ -91,7 +117,7 @@ def render(scene: bpy.types.Scene, frame: int, width: int, height: int, filename
     if scene.frame_current == frame:
         scene.frame_set(frame + 1 if frame < scene.frame_end else frame - 1)
     scene.frame_set(frame)
-    path = OUTPUT / filename
+    path = output / filename
     scene.render.filepath = str(path)
     bpy.ops.render.render(write_still=True)
     return {
@@ -251,7 +277,10 @@ def build_material_angle_preview_scenes() -> list[bpy.types.Scene]:
 
 
 def main() -> None:
-    OUTPUT.mkdir(parents=True, exist_ok=True)
+    args = parse_script_args()
+    output = args.output.resolve()
+    report = args.report.resolve()
+    output.mkdir(parents=True, exist_ok=True)
     rendered: list[dict[str, object]] = []
     # Build isolated previews before timeline validation changes the evaluated
     # state of data blocks shared by ARTIST_EDIT and WEB_ANIMATION.
@@ -264,34 +293,35 @@ def main() -> None:
     # rotation/curve motion and the 15-second ink reveal, plus broad timeline
     # samples.
     for frame in (0, 60, 210, 420, 900, 1793, 3586):
-        rendered.append(render(web, frame, 960, 540, f"web-animation-{frame:04d}.png"))
+        rendered.append(render(web, frame, 960, 540, f"web-animation-{frame:04d}.png", output))
 
     artist = bpy.data.scenes["ARTIST_EDIT"]
-    rendered.append(render(artist, 3586, 960, 540, "artist-edit-materials.png"))
+    rendered.append(render(artist, 3586, 960, 540, "artist-edit-materials.png", output))
     for frame in (71, 73, 181, 424, 690):
-        rendered.append(render(artist, frame, 960, 540, f"artist-edit-frame-{frame:04d}.png"))
-    rendered.append(render(material_preview, 0, 512, 512, "material-preview-tree.png"))
+        rendered.append(render(artist, frame, 960, 540, f"artist-edit-frame-{frame:04d}.png", output))
+    rendered.append(render(material_preview, 0, 512, 512, "material-preview-tree.png", output))
     for angle_scene, angle_name in zip(
         material_angle_previews,
         ("front", "oblique", "grazing", "back"),
         strict=True,
     ):
-        rendered.append(render(angle_scene, 0, 512, 512, f"material-angle-{angle_name}.png"))
-    rendered.append(render(grass_preview, 3586, 720, 720, "grass-preview-tree.png"))
-    rendered.append(render(background_preview, 3586, 960, 540, "background-preview-card.png"))
+        rendered.append(render(angle_scene, 0, 512, 512, f"material-angle-{angle_name}.png", output))
+    rendered.append(render(grass_preview, 3586, 720, 720, "grass-preview-tree.png", output))
+    rendered.append(render(background_preview, 3586, 960, 540, "background-preview-card.png", output))
 
     source = bpy.data.scenes["SOURCE_REFERENCE"]
     for frame in (0, 900, 1793, 3586):
-        rendered.append(render(source, frame, 960, 540, f"source-camera-{frame:04d}.png"))
+        rendered.append(render(source, frame, 960, 540, f"source-camera-{frame:04d}.png", output))
 
     for scene_id in range(1, 7):
         scene = bpy.data.scenes[f"LANDSCAPE_{scene_id:02d}_DESKTOP"]
-        rendered.append(render(scene, 0, 480, 270, f"landscape-{scene_id:02d}-desktop-base.png"))
-    REPORT.write_text(
+        rendered.append(render(scene, 0, 480, 270, f"landscape-{scene_id:02d}-desktop-base.png", output))
+    report.parent.mkdir(parents=True, exist_ok=True)
+    report.write_text(
         json.dumps({"blender_version": bpy.app.version_string, "renders": rendered}, indent=2) + "\n",
         encoding="utf-8",
     )
-    print(json.dumps({"render_count": len(rendered), "report": str(REPORT)}))
+    print(json.dumps({"render_count": len(rendered), "report": str(report)}))
 
 
 if __name__ == "__main__":

@@ -5,6 +5,10 @@ blender/*.blend1
 blender/*.blend2
 generated/*
 reports/rendered/
+versions/*/generated/*
+versions/*/reports/rendered/
+versions/*/blender/*.blend1
+versions/*/blender/*.blend2
 
 # Keep the reproducible structure visible in Git.
 !source_snapshot/.gitkeep

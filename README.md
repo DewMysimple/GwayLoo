@@ -59,7 +59,7 @@ src/
 
 tests/e2e/                            # Playwright 双视口回归
 public/wp-content/themes/davidwhyte/  # 验收期只读兼容运行时与原素材
-scene_workbench/                      # 本地三维资产镜像与 Blender 二创工作区
+blender_scenebench/                   # 本地三维资产镜像与 Blender 二创工作区
 wiki_memory/                          # ADR、当前状态、知识和任务日志
 ```
 
@@ -88,9 +88,9 @@ git show baseline/static-replica-2026-08-22
 
 ## 三维场景工作区
 
-[`scene_workbench/`](./scene_workbench/) 是与正式网页隔离的本地美术工作区，保存三维体验资产副本、场景清单、重建脚本和 Blender 5.0 主文件。Vite、`src/` 和 `public/` 不引用该目录；原素材副本、生成缓存与 `.blend` 按本地实验策略不进入 Git。
+[`blender_scenebench/`](./blender_scenebench/) 是与正式网页隔离的本地美术工作区，保存三维体验资产副本、场景清单、重建脚本和 Blender 5.0 主文件。Vite、`src/` 和 `public/` 不引用该目录；原素材副本、生成缓存与 `.blend` 按本地实验策略不进入 Git。
 
-使用和重建说明见 [`scene_workbench/README.md`](./scene_workbench/README.md)。
+使用和重建说明见 [`blender_scenebench/README.md`](./blender_scenebench/README.md)。Blender 专属工程记忆见 [`blender_scenebench/wiki_memory/`](./blender_scenebench/wiki_memory/)。
 
 ## 工程记忆
 
